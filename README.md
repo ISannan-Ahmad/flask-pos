@@ -71,7 +71,7 @@ flask_pos/
 
 ```bash
 # 1. Clone the repository
-git clone <repo-url>
+git clone https://github.com/ISannan-Ahmad/flask-pos.git
 cd flask_pos
 
 # 2. Create and activate a virtual environment
