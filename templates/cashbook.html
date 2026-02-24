@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Cash Book</h2>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row align-items-end">
+            <div class="col-md-3">
+                <label>Filter by Date Range:</label>
+                <input type="date" name="start_date" class="form-control" value="{{ start_date or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label>To:</label>
+                <input type="date" name="end_date" class="form-control" value="{{ end_date or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label>Type:</label>
+                <select name="type" class="form-select">
+                    <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>All Transactions</option>
+                    <option value="in" {% if transaction_type == 'in' %}selected{% endif %}>Money In</option>
+                    <option value="out" {% if transaction_type == 'out' %}selected{% endif %}>Money Out</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Source/Type</th>
+                    <th>Description</th>
+                    <th class="text-success">Money In</th>
+                    <th class="text-danger">Money Out</th>
+                    <th class="text-primary">Running Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ t.creator_username }}</td>
+                    <td><span class="badge bg-secondary">{{ t.source|title }}</span></td>
+                    <td>{{ t.description }}</td>
+                    <td class="text-success fw-bold">{% if t.transaction_type == 'in' %}+{{ "%.2f"|format(t.amount) }}{% endif %}</td>
+                    <td class="text-danger fw-bold">{% if t.transaction_type == 'out' %}-{{ "%.2f"|format(t.amount) }}{% endif %}</td>
+                    <td class="text-primary fw-bold">{{ "%.2f"|format(t.running_balance) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No cash transactions found for this period.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

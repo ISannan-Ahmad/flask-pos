@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block page_title %}Edit Product: {{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="fw-bold mb-0">Edit Item Details</h3>
+  <a href="{{ url_for('products.product_detail', id=product.id) }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+    <i class="bi bi-arrow-left me-1"></i> Back to Product
+  </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+  <div class="card-body p-4">
+    <form method="POST">
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Product Name *</label>
+          <input name="name" class="form-control" value="{{ product.name }}" required />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">SKU</label>
+          <input name="sku" class="form-control" value="{{ product.sku or '' }}" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-12 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Description</label>
+          <textarea name="description" class="form-control" rows="2">{{ product.description or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Min Stock Level</label>
+          <input name="min_stock" type="number" min="0" class="form-control" value="{{ product.min_stock_level }}" />
+        </div>
+        <div class="col-md-8 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Distributor</label>
+          <select name="distributor_id" class="form-select" id="distributorSelect">
+            <option value="">No Distributor (Independent)</option>
+            {% for dist in distributors %}
+            <option value="{{ dist.id }}" {% if product.distributor_id == dist.id %}selected{% endif %}>{{ dist.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Vehicle Type</label>
+          <select name="vehicle_type" class="form-select">
+            <option value="">Select Type</option>
+            <option value="Car" {% if product.vehicle_type == 'Car' %}selected{% endif %}>Car</option>
+            <option value="Motorcycle" {% if product.vehicle_type == 'Motorcycle' %}selected{% endif %}>Motorcycle</option>
+            <option value="Truck" {% if product.vehicle_type == 'Truck' %}selected{% endif %}>Truck</option>
+            <option value="Bus" {% if product.vehicle_type == 'Bus' %}selected{% endif %}>Bus</option>
+            <option value="Tractor" {% if product.vehicle_type == 'Tractor' %}selected{% endif %}>Tractor</option>
+          </select>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Vehicle Model</label>
+          <input name="vehicle_model" class="form-control" value="{{ product.vehicle_model or '' }}" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Part Number</label>
+          <input name="part_number" class="form-control" value="{{ product.part_number or '' }}" />
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Cost Price (Rs.) *</label>
+          <input name="cost" type="number" step="0.01" min="0" class="form-control text-danger fw-bold" value="{{ product.cost_price }}" required />
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Selling Price (Rs.) *</label>
+          <input name="sell" type="number" step="0.01" min="0" class="form-control text-success fw-bold" value="{{ product.selling_price }}" required />
+        </div>
+      </div>
+
+      <div class="text-end mt-4">
+        <button class="btn btn-warning rounded-pill px-5 fw-bold shadow-sm">
+          <i class="bi bi-save me-2"></i> Update Product
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    $('#distributorSelect').select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Search & Select Distributor'
+    });
+});
+</script>
+{% endblock %}

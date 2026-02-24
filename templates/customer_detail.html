@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>Customer: {{ customer.name }}</h2>
+        <p class="text-muted mb-0"><i class="bi bi-telephone"></i> {{ customer.phone or 'No phone' }} | <i class="bi bi-geo-alt"></i> {{ customer.address or 'No address' }}</p>
+    </div>
+    <div>
+        <h4 class="text-end mb-0">Balance Due: <span class="{% if customer.balance > 0 %}text-danger{% else %}text-success{% endif %}">Rs. {{ "%.2f"|format(customer.balance) }}</span></h4>
+        <small class="text-muted float-end">Credit Limit: Rs. {{ "%.2f"|format(customer.credit_limit) }}</small>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Payment Form -->
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Receive Account Payment</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('customers.account_payment', customer_id=customer.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label>Payment Amount (Rs.)</label>
+                        <input type="number" name="amount" step="0.01" min="0.01" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Payment Method</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Cash</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cheque">Cheque</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Cleared old invoices"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100" {% if customer.balance <= 0 %}disabled{% endif %}>
+                        Apply Payment (FIFO)
+                    </button>
+                    {% if customer.balance <= 0 %}
+                    <small class="text-success d-block text-center mt-2">Customer balance is clear.</small>
+                    {% else %}
+                    <small class="text-muted d-block text-center mt-2">Will auto-pay oldest unpaid invoices first.</small>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction History -->
+    <div class="col-md-8">
+        <ul class="nav nav-tabs" id="customerTabs">
+            <li class="nav-item">
+                <a class="nav-link active" data-bs-toggle="tab" href="#orders">Orders</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" data-bs-toggle="tab" href="#transactions">Account Ledger</a>
+            </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+            <!-- Orders Tab -->
+            <div class="tab-pane fade show active" id="orders">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Paid</th>
+                            <th>Due</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in customer.orders|sort(attribute='created_at', reverse=True) %}
+                        <tr>
+                            <td>#{{ order.id }}</td>
+                            <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if order.status == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Draft</span>
+                                {% endif %}
+                            </td>
+                            <td>Rs. {{ "%.2f"|format(order.total_amount) }}</td>
+                            <td>Rs. {{ "%.2f"|format(order.amount_paid) }}</td>
+                            <td class="text-danger">Rs. {{ "%.2f"|format(order.remaining_amount) }}</td>
+                            <td>
+                                <a href="{{ url_for('sales.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="7" class="text-center text-muted">No orders found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Ledger Tab -->
+            <div class="tab-pane fade" id="transactions">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date</th>
+                            <th>Reference</th>
+                            <th>Method</th>
+                            <th class="text-danger">Debt (+)</th>
+                            <th class="text-success">Payment (-)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in customer.transactions|sort(attribute='created_at', reverse=True) %}
+                        <tr>
+                            <td>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ tx.reference }} <br><small class="text-muted">{{ tx.notes or '' }}</small></td>
+                            <td>{{ tx.payment_method or '-' }}</td>
+                            <td class="text-danger fw-bold">{% if tx.transaction_type == 'receivable' %}Rs. {{ "%.2f"|format(tx.amount) }}{% endif %}</td>
+                            <td class="text-success fw-bold">{% if tx.transaction_type == 'payment' %}Rs. {{ "%.2f"|format(tx.amount) }}{% endif %}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted">No transactions found.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

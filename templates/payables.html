@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Accounts Payable</h2>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h5 class="card-title">Total Payables</h5>
+                <h3>Rs. {{ "%.2f"|format(total_payable) }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Distributor Name</th>
+                    <th>Contact Person</th>
+                    <th>Phone</th>
+                    <th>Balance Owed by Us</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for creditor in creditors %}
+                <tr>
+                    <td>{{ creditor.name }}</td>
+                    <td>{{ creditor.contact_person or 'N/A' }}</td>
+                    <td>{{ creditor.phone or 'N/A' }}</td>
+                    <td class="text-danger fw-bold">Rs. {{ "%.2f"|format(creditor.balance) }}</td>
+                    <td>
+                        <a href="{{ url_for('distributors.detail', distributor_id=creditor.id) }}" class="btn btn-sm btn-outline-success">Settle Debt & History</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No outstanding payables currently!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,211 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>{{ distributor.name }}</h3>
+  <div>
+    <a href="{{ url_for('distributors.list_distributors') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back to Distributors
+    </a>
+    <a
+      href="{{ url_for('purchases.create_purchase_order') }}?distributor={{ distributor.id }}"
+      class="btn btn-success"
+    >
+      <i class="bi bi-cart-plus"></i> New Purchase Order
+    </a>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <h5 class="card-title">Total Purchases</h5>
+        <h3>
+          Rs. {{ "%.2f"|format(purchase_orders|sum(attribute='total_amount')) }}
+        </h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-white bg-warning">
+      <div class="card-body">
+        <h5 class="card-title">Outstanding Balance</h5>
+        <h3>Rs. {{ "%.2f"|format(distributor.balance) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <h5 class="card-title">Products</h5>
+        <h3>{{ products|length }}</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Distributor Information</h5>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <tr>
+            <th>Contact Person:</th>
+            <td>{{ distributor.contact_person or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Phone:</th>
+            <td>{{ distributor.phone or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Email:</th>
+            <td>{{ distributor.email or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Address:</th>
+            <td>{{ distributor.address or 'N/A' }}</td>
+          </tr>
+          <tr>
+            <th>Payment Terms:</th>
+            <td>{{ distributor.payment_terms }} days</td>
+          </tr>
+          <tr>
+            <th>Member Since:</th>
+            <td>{{ distributor.created_at.strftime('%Y-%m-%d') }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Products from this Distributor</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Part #</th>
+                <th>Stock</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in products %}
+              <tr>
+                <td>{{ product.name }}</td>
+                <td>{{ product.part_number or 'N/A' }}</td>
+                <td>
+                  {% if product.stock_quantity <= product.min_stock_level %}
+                  <span class="text-danger">{{ product.stock_quantity }}</span>
+                  {% else %} {{ product.stock_quantity }} {% endif %}
+                </td>
+                <td>Rs. {{ "%.2f"|format(product.selling_price) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header bg-warning text-white">
+    <h5 class="mb-0">Recent Purchase Orders</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>PO #</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Amount</th>
+            <th>Paid</th>
+            <th>Balance</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for po in purchase_orders %}
+          <tr>
+            <td>{{ po.id }}</td>
+            <td>{{ po.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <span
+                class="badge {% if po.status == 'received' %}bg-success{% else %}bg-warning{% endif %}"
+              >
+                {{ po.status }}
+              </span>
+            </td>
+            <td>Rs. {{ "%.2f"|format(po.total_amount) }}</td>
+            <td>Rs. {{ "%.2f"|format(po.amount_paid) }}</td>
+            <td class="{% if po.remaining_amount > 0 %}text-danger{% endif %}">
+              Rs. {{ "%.2f"|format(po.remaining_amount) }}
+            </td>
+            <td>
+              <a
+                href="{{ url_for('purchases.purchase_order_detail', id=po.id) }}"
+                class="btn btn-sm btn-primary"
+                >View</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-info text-white">
+    <h5 class="mb-0">Recent Transactions</h5>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Reference</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr>
+            <td>{{ t.created_at.strftime('%Y-%m-%d') }}</td>
+            <td>
+              <span
+                class="badge {% if t.transaction_type == 'payable' %}bg-danger{% else %}bg-success{% endif %}"
+              >
+                {{ t.transaction_type }}
+              </span>
+            </td>
+            <td
+              class="{% if t.transaction_type == 'payable' %}text-danger{% else %}text-success{% endif %}"
+            >
+              Rs. {{ "%.2f"|format(t.amount) }}
+            </td>
+            <td>{{ t.reference or 'N/A' }}</td>
+            <td>{{ t.notes or 'N/A' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

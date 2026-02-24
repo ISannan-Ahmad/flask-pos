@@ -1,0 +1,104 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Sales History</h3>
+  <a href="{{ url_for('sales.create_order') }}" class="btn btn-success">
+    <i class="bi bi-plus-circle"></i> Create New Order
+  </a>
+</div>
+
+<div class="card shadow-sm border-0">
+  <div class="card-body">
+    <div class="d-flex justify-content-between mb-3">
+        <h5 class="card-title">All Orders</h5>
+        <div class="input-group w-25">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" id="orderSearch" class="form-control" placeholder="Search orders...">
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="table table-hover table-bordered" id="ordersTable">
+        <thead class="table-dark">
+          <tr>
+            <th>Order ID</th>
+            <th>Customer</th>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Total Amount</th>
+            <th>Created By</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td>#{{ order.id }}</td>
+            <td>
+                {{ order.customer_name if order.customer_name else 'Walk-in' }}
+                {% if order.customer_phone %}<br><small class="text-muted">{{ order.customer_phone }}</small>{% endif %}
+            </td>
+            <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              {% if order.order_type == 'credit_sale' %}
+              <span class="badge bg-info text-dark">Credit Sale</span>
+              {% else %}
+              <span class="badge bg-primary">Cash Sale</span>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge {% if order.status == 'approved' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                {{ order.status|title }}
+              </span>
+            </td>
+            <td class="fw-bold">Rs. {{ "%.2f"|format(order.total_amount) }}</td>
+            <td>{{ order.creator.username }}</td>
+            <td>
+              <a href="{{ url_for('sales.order_detail', order_id=order.id) }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% if order.status == 'approved' %}
+              <a href="{{ url_for('sales.receipt', order_id=order.id) }}" class="btn btn-sm btn-success">
+                <i class="bi bi-receipt"></i> Receipt
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      {% if not orders %}
+      <div class="alert alert-info border-0">
+        <i class="bi bi-info-circle"></i> No sales history available yet.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('orderSearch');
+    const table = document.getElementById('ordersTable');
+    if(table) {
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+        searchInput.addEventListener('keyup', function() {
+            const term = searchInput.value.toLowerCase();
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const textContent = row.textContent.toLowerCase();
+                
+                if (textContent.includes(term)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

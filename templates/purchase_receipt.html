@@ -1,0 +1,144 @@
+{% extends "base.html" %} 
+
+{% block page_title %}Purchase Receipt - PO #{{ purchase.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+  <h3 class="fw-bold mb-0">Purchase Receipt</h3>
+  <div>
+    <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 me-2 shadow-sm">
+      <i class="bi bi-printer me-2"></i> Print Receipt
+    </button>
+    <a href="{{ url_for('purchases.purchase_orders') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+      <i class="bi bi-arrow-left me-2"></i> Back to Purchases
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-lg rounded-4" id="receipt">
+      <div class="card-body p-5">
+        
+        <!-- Receipt Header / Branding -->
+        <div class="text-center mb-5">
+          <div class="display-5 text-primary mb-2">
+            <i class="bi bi-car-front-fill"></i>
+          </div>
+          <h2 class="fw-bold tracking-wider mb-1">SUZUKI AUTO</h2>
+          <p class="text-muted mb-0">Authorized Dealership & Spare Parts</p>
+          <p class="text-muted small">Karachi, Pakistan | Tel: (0300) 123-4567</p>
+          <br>
+          <h4 class="fw-bold bg-light d-inline-block px-4 py-2 rounded">PURCHASE VOUCHER</h4>
+        </div>
+        
+        <div class="row mb-5 border-bottom pb-4">
+          <div class="col-sm-6">
+            <h6 class="text-uppercase text-muted fw-bold small mb-3">Distributor:</h6>
+            <div class="fw-bold fs-5">{{ purchase.distributor.name }}</div>
+            <div class="text-muted">{{ purchase.distributor.contact_person or 'N/A' }}</div>
+            <div class="text-muted">{{ purchase.distributor.phone or 'N/A' }}</div>
+          </div>
+          <div class="col-sm-6 text-sm-end mt-4 mt-sm-0">
+            <h6 class="text-uppercase text-muted fw-bold small mb-3">Voucher Details:</h6>
+            <div class="fw-bold">PO #{{ purchase.id }}</div>
+            <div class="text-muted mb-2">{{ purchase.created_at.strftime('%Y-%m-%d %I:%M %p') }}</div>
+            {% if purchase.invoice_number %}
+              <div class="text-muted mb-2">Invoice #{{ purchase.invoice_number }}</div>
+            {% endif %}
+            <div>
+              <span class="badge {% if purchase.status == 'received' %}bg-success{% else %}bg-warning{% endif %} text-uppercase px-3 py-2 rounded-pill">
+                {{ purchase.status }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive mb-5">
+          <table class="table table-borderless align-middle">
+            <thead class="border-bottom border-top bg-light text-uppercase small tracking-wider text-muted">
+              <tr>
+                <th class="py-3 ps-3">Item</th>
+                <th class="py-3 text-center">Qty</th>
+                <th class="py-3 text-end">Unit Cost</th>
+                <th class="py-3 text-end pe-3">Line Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in purchase.items %}
+              <tr class="border-bottom">
+                <td class="py-3 ps-3 fw-bold">{{ item.product.name }}</td>
+                <td class="py-3 text-center">{{ item.quantity }}</td>
+                <td class="py-3 text-end text-muted">Rs. {{ "%.2f"|format(item.unit_cost) }}</td>
+                <td class="py-3 text-end pe-3 fw-bold">
+                  Rs. {{ "%.2f"|format(item.total_cost) }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row justify-content-end mb-5">
+          <div class="col-sm-6 col-lg-5">
+            <table class="table table-borderless align-middle fw-bold">
+              <tr>
+                <td class="text-muted text-uppercase small">Subtotal:</td>
+                <td class="text-end fs-5">Rs. {{ "%.2f"|format(purchase.total_amount) }}</td>
+              </tr>
+              {% if purchase.amount_paid > 0 %}
+              <tr>
+                <td class="text-muted text-uppercase small pt-3 border-top">Amount Paid:</td>
+                <td class="text-end pt-3 border-top text-success">
+                  Rs. {{ "%.2f"|format(purchase.amount_paid) }}
+                </td>
+              </tr>
+              <tr>
+                <td class="text-muted text-uppercase small">Remaining balance:</td>
+                <td class="text-end text-danger fs-5">
+                  Rs. {{ "%.2f"|format(purchase.remaining_amount) }}
+                </td>
+              </tr>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+
+        <div class="text-center border-top pt-5">
+          <div class="row">
+              <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold" style="width: 40%; margin-left: 5%;">
+                Prepared By: {{ purchase.creator.username }}
+              </div>
+              <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold" style="width: 40%; margin-left: 10%;">
+                Authorized Signature
+              </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #receipt, #receipt * {
+      visibility: visible;
+    }
+    #receipt {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-shadow: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+    }
+  }
+</style>
+{% endblock %}

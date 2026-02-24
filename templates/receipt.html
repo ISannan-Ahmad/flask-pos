@@ -1,0 +1,146 @@
+{% extends "base.html" %} 
+
+{% block page_title %}Sales Receipt - Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+  <h3 class="fw-bold mb-0">Transaction Receipt</h3>
+  <div>
+    <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 me-2 shadow-sm">
+      <i class="bi bi-printer me-2"></i> Print Receipt
+    </button>
+    <a href="{{ url_for('sales.sales_history') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+      <i class="bi bi-arrow-left me-2"></i> Back to History
+    </a>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-lg rounded-4" id="receipt">
+      <div class="card-body p-5">
+        
+        <!-- Receipt Header / Branding -->
+        <div class="text-center mb-5">
+          <div class="display-5 text-primary mb-2">
+            <i class="bi bi-car-front-fill"></i>
+          </div>
+          <h2 class="fw-bold tracking-wider mb-1">SUZUKI AUTO</h2>
+          <p class="text-muted mb-0">Authorized Dealership & Spare Parts</p>
+          <p class="text-muted small">Karachi, Pakistan | Tel: (0300) 123-4567</p>
+        </div>
+        
+        <div class="row mb-5 border-bottom pb-4">
+          <div class="col-sm-6">
+            <h6 class="text-uppercase text-muted fw-bold small mb-3">Bill To:</h6>
+            {% if order.customer_name %}
+              <div class="fw-bold fs-5">{{ order.customer_name }}</div>
+              <div class="text-muted">{{ order.customer_phone or 'No phone provided' }}</div>
+            {% else %}
+              <div class="fw-bold fs-5">Walk-in Customer</div>
+              <div class="text-muted">N/A</div>
+            {% endif %}
+          </div>
+          <div class="col-sm-6 text-sm-end mt-4 mt-sm-0">
+            <h6 class="text-uppercase text-muted fw-bold small mb-3">Receipt Details:</h6>
+            <div class="fw-bold">Order #{{ order.id }}</div>
+            <div class="text-muted mb-2">{{ order.created_at.strftime('%Y-%m-%d %I:%M %p') }}</div>
+            <div>
+              <span class="badge {% if order.order_type == 'credit_sale' %}bg-info{% else %}bg-success{% endif %} text-uppercase px-3 py-2 rounded-pill">
+                {{ 'Credit Sale' if order.order_type == 'credit_sale' else 'Paid Cash' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive mb-5">
+          <table class="table table-borderless align-middle">
+            <thead class="border-bottom border-top bg-light text-uppercase small tracking-wider text-muted">
+              <tr>
+                <th class="py-3 ps-3">Description</th>
+                <th class="py-3 text-center">Qty</th>
+                <th class="py-3 text-end">Unit Price</th>
+                <th class="py-3 text-end pe-3">Line Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items %}
+              <tr class="border-bottom">
+                <td class="py-3 ps-3 fw-bold">{{ item.product.name }}</td>
+                <td class="py-3 text-center">{{ item.quantity }}</td>
+                <td class="py-3 text-end text-muted">Rs. {{ "%.2f"|format(item.price or 0) }}</td>
+                <td class="py-3 text-end pe-3 fw-bold">
+                  Rs. {{ "%.2f"|format((item.price or 0) * item.quantity) }}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="row justify-content-end mb-5">
+          <div class="col-sm-6 col-lg-5">
+            <table class="table table-borderless align-middle fw-bold">
+              <tr>
+                <td class="text-muted text-uppercase small">Subtotal:</td>
+                <td class="text-end fs-5">Rs. {{ "%.2f"|format(order.total_amount) }}</td>
+              </tr>
+              {% if order.order_type == 'credit_sale' and order.amount_paid > 0 %}
+              <tr>
+                <td class="text-muted text-uppercase small pt-3 border-top">Amount Paid:</td>
+                <td class="text-end pt-3 border-top text-success">
+                  Rs. {{ "%.2f"|format(order.amount_paid) }}
+                </td>
+              </tr>
+              <tr>
+                <td class="text-muted text-uppercase small">Remaining balance:</td>
+                <td class="text-end text-danger fs-5">
+                  Rs. {{ "%.2f"|format(order.remaining_amount) }}
+                </td>
+              </tr>
+              {% endif %}
+            </table>
+          </div>
+        </div>
+
+        <div class="text-center border-top pt-5">
+          <p class="fs-5 fw-bold mb-1">Thank you for your business!</p>
+          {% if order.order_type == 'credit_sale' and order.remaining_amount > 0 %}
+            <p class="text-danger mt-3 bg-danger bg-opacity-10 py-3 rounded-4">
+              <i class="bi bi-info-circle-fill me-2"></i>  
+              <strong>Please clear the remaining balance of Rs. {{ "%.2f"|format(order.remaining_amount) }} by {{ order.due_date.strftime('%B %d, %Y') if order.due_date else 'the due date' }}.</strong>
+            </p>
+          {% endif %}
+          
+          <div class="mt-5 pt-5 w-50 mx-auto border-top border-dark text-muted small text-uppercase fw-bold">
+            Authorized Signature
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  @media print {
+    body * {
+      visibility: hidden;
+    }
+    #receipt, #receipt * {
+      visibility: visible;
+    }
+    #receipt {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-shadow: none !important;
+      border: none !important;
+      border-radius: 0 !important;
+    }
+  }
+</style>
+{% endblock %}

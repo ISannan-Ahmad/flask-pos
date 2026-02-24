@@ -1,0 +1,44 @@
+{% extends "base.html" %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 mb-4">
+    <div class="card shadow-sm border-0">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="bi bi-pencil"></i> Edit Expense</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Category *</label>
+            <select name="category" class="form-select" required>
+              <option value="Salary" {% if expense.category == 'Salary' %}selected{% endif %}>Salary / Wages</option>
+              <option value="Electricity Bill" {% if expense.category == 'Electricity Bill' %}selected{% endif %}>Electricity Bill</option>
+              <option value="Water Bill" {% if expense.category == 'Water Bill' %}selected{% endif %}>Water Bill</option>
+              <option value="Gas Bill" {% if expense.category == 'Gas Bill' %}selected{% endif %}>Gas / Fuel</option>
+              <option value="Internet/Phone" {% if expense.category == 'Internet/Phone' %}selected{% endif %}>Internet & Phone</option>
+              <option value="Rent" {% if expense.category == 'Rent' %}selected{% endif %}>Shop Rent</option>
+              <option value="Maintenance" {% if expense.category == 'Maintenance' %}selected{% endif %}>Maintenance & Repairs</option>
+              <option value="Office Supplies" {% if expense.category == 'Office Supplies' %}selected{% endif %}>Office Supplies</option>
+              <option value="Taxes" {% if expense.category == 'Taxes' %}selected{% endif %}>Taxes</option>
+              <option value="Other" {% if expense.category == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Amount (Rs.) *</label>
+            <input type="number" name="amount" class="form-control" step="0.01" min="0" value="{{ expense.amount }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description / Notes</label>
+            <textarea name="description" class="form-control" rows="3">{{ expense.description }}</textarea>
+          </div>
+          <button type="submit" class="btn btn-primary w-100 mb-2">
+            Save Changes
+          </button>
+          <a href="{{ url_for('expenses.list_expenses') }}" class="btn btn-secondary w-100">
+            Cancel
+          </a>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

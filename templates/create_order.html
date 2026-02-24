@@ -1,0 +1,250 @@
+{% extends "base.html" %} {% block content %}
+
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Create Sales Order</h3>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="POST" id="orderForm">
+      <div class="row mb-3">
+        <div class="col-md-3">
+          <label class="form-label">Order Type</label>
+          <select name="order_type" class="form-select" id="orderType">
+            <option value="sale">Cash Sale</option>
+            <option value="credit_sale">Credit Sale</option>
+          </select>
+        </div>
+        
+        <!-- Customer Select (For existing customers) -->
+        <div class="col-md-3" id="customerSelectContainer" style="display: none;">
+          <label class="form-label">Registered Customer</label>
+          <select name="customer_id" class="form-select" id="customerSelect">
+            <option value="">-- None (Walk-in) --</option>
+            {% for c in customers %}
+            <option value="{{ c.id }}">{{ c.name }} {% if c.phone %}({{ c.phone }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3 walk-in-field">
+          <label class="form-label">Customer Name</label>
+          <input type="text" name="customer_name" class="form-control" />
+        </div>
+        <div class="col-md-3 walk-in-field">
+          <label class="form-label">Customer Phone</label>
+          <input type="text" name="customer_phone" class="form-control" />
+        </div>
+
+        <div class="col-md-3 mt-3" id="amountPaidField" style="display: none">
+          <label class="form-label">Advance Payment</label>
+          <input
+            type="number"
+            name="amount_paid"
+            class="form-control"
+            step="0.01"
+            min="0"
+            value="0"
+            {% if current_user.role != 'admin' %}readonly{% endif %}
+          />
+          {% if current_user.role != 'admin' %}
+            <small class="text-muted">Only admins can record advance payments.</small>
+          {% endif %}
+        </div>
+      </div>
+
+      <h5 class="mt-4">Order Items</h5>
+      <div id="items-container">
+        <div class="row mb-2 item-row">
+          <div class="col-md-6">
+            <select name="product_id[]" class="form-select product-select" required>
+              <option value="">Search & Select Product</option>
+              {% for product in products %}
+              <option value="{{ product.id }}" data-price="{{ product.selling_price }}" data-stock="{{ product.stock_quantity }}">
+                {{ product.name }} (Available: {{ product.stock_quantity }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <input type="number" name="quantity[]" class="form-control quantity" placeholder="Qty" min="1" required>
+          </div>
+          {% if current_user.role == 'admin' %}
+          <div class="col-md-3">
+            <input type="text" class="form-control item-total" placeholder="Total" readonly>
+          </div>
+          {% else %}
+            <!-- Staff cannot see prices -->
+            <div class="col-md-3 d-flex align-items-center text-muted fst-italic">
+                Price set by Admin on Approval
+            </div>
+          {% endif %}
+          <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-item" style="display: none;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <button type="button" class="btn btn-secondary mb-3 mt-2" id="add-item">
+        <i class="bi bi-plus-circle"></i> Add Item
+      </button>
+
+      {% if current_user.role == 'admin' %}
+      <div class="row mt-3">
+        <div class="col-md-6 offset-md-6">
+          <table class="table">
+            <tr>
+              <th>Total Amount:</th>
+              <td class="text-end">Rs. <span id="total-amount">0.00</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+      <button class="btn btn-primary mt-2">Create Draft Order</button>
+    </form>
+  </div>
+</div>
+
+<!-- jQuery and Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const orderType = document.getElementById("orderType");
+    const amountPaidField = document.getElementById("amountPaidField");
+    const customerSelectContainer = document.getElementById("customerSelectContainer");
+    
+    // We would ideally populate customers via AJAX or template context here
+    // For this rewrite, we will keep it simple and focus on the UI state logic
+
+    function toggleFields() {
+      if (orderType.value === "credit_sale") {
+        amountPaidField.style.display = "block";
+        customerSelectContainer.style.display = "block";
+      } else {
+        amountPaidField.style.display = "none";
+        customerSelectContainer.style.display = "none";
+      }
+    }
+
+    orderType.addEventListener("change", toggleFields);
+    toggleFields();
+
+    // Dynamic Items Logic
+    const container = document.getElementById('items-container');
+    const addButton = document.getElementById('add-item');
+    
+    function initSelect2(element) {
+      $(element).select2({
+        theme: 'bootstrap-5',
+        width: '100%',
+        placeholder: 'Search & Select Product'
+      });
+      
+      $(element).on('change', function() {
+        const row = this.closest('.item-row');
+        updateItemTotal(row);
+      });
+    }
+
+    function updateItemTotal(row) {
+      const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+      const select = row.querySelector('.product-select');
+      const selectedOption = select.options[select.selectedIndex];
+      
+      let price = 0;
+      if (selectedOption && selectedOption.dataset.price) {
+        price = parseFloat(selectedOption.dataset.price);
+        
+        const maxStock = parseInt(selectedOption.dataset.stock);
+        const qtyInput = row.querySelector('.quantity');
+        qtyInput.max = maxStock;
+        
+        if (qty > maxStock) {
+           qtyInput.value = maxStock;
+           const itemTotalEl = row.querySelector('.item-total');
+           if (itemTotalEl) itemTotalEl.value = (maxStock * price).toFixed(2);
+           updateTotal();
+           return;
+        }
+      }
+      
+      const itemTotalEl = row.querySelector('.item-total');
+      if (itemTotalEl) itemTotalEl.value = (qty * price).toFixed(2);
+      updateTotal();
+    }
+    
+    function updateTotal() {
+      let total = 0;
+      const totalAmountEl = document.getElementById('total-amount');
+      if (!totalAmountEl) return;
+      
+      document.querySelectorAll('.item-total').forEach(input => {
+        total += parseFloat(input.value) || 0;
+      });
+      totalAmountEl.textContent = total.toFixed(2);
+    }
+    
+    function setupRow(row) {
+      const qtyInput = row.querySelector('.quantity');
+      const removeBtn = row.querySelector('.remove-item');
+      const select = row.querySelector('.product-select');
+      
+      initSelect2(select);
+      
+      qtyInput.addEventListener('input', () => updateItemTotal(row));
+      
+      removeBtn.addEventListener('click', function() {
+        if ($(select).hasClass("select2-hidden-accessible")) {
+            $(select).select2('destroy');
+        }
+        row.remove();
+        updateTotal();
+        
+        const rows = document.querySelectorAll('.item-row');
+        rows.forEach((r, index) => {
+          r.querySelector('.remove-item').style.display = rows.length > 1 ? 'inline-block' : 'none';
+        });
+      });
+    }
+    
+    addButton.addEventListener('click', function() {
+      const firstRow = document.querySelector('.item-row');
+      
+      const firstSelect = firstRow.querySelector('.product-select');
+      if ($(firstSelect).hasClass("select2-hidden-accessible")) {
+          $(firstSelect).select2('destroy');
+      }
+      
+      const newRow = firstRow.cloneNode(true);
+      
+      initSelect2(firstSelect);
+      
+      newRow.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'button') input.value = '';
+      });
+      newRow.querySelector('.product-select').value = '';
+      const itemTotal = newRow.querySelector('.item-total');
+      if (itemTotal) itemTotal.value = '';
+      
+      container.appendChild(newRow);
+      setupRow(newRow);
+      
+      document.querySelectorAll('.remove-item').forEach(btn => {
+        btn.style.display = 'inline-block';
+      });
+    });
+    
+    document.querySelectorAll('.item-row').forEach(setupRow);
+  });
+</script>
+{% endblock %}

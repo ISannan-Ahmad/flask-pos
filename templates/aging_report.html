@@ -1,0 +1,228 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Aging Report</h3>
+  <div>
+    <button onclick="window.print()" class="btn btn-primary">
+      <i class="bi bi-printer"></i> Print Report
+    </button>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Accounts Receivable (Money Owed to Us)</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <table class="table table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Aging</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>0-30 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_receivables['0-30']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_receivables['0-30']|length }}</td>
+              </tr>
+              <tr>
+                <td>31-60 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_receivables['31-60']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">
+                  {{ aging_receivables['31-60']|length }}
+                </td>
+              </tr>
+              <tr>
+                <td>61-90 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_receivables['61-90']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">
+                  {{ aging_receivables['61-90']|length }}
+                </td>
+              </tr>
+              <tr>
+                <td>90+ Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_receivables['90+']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_receivables['90+']|length }}</td>
+              </tr>
+              <tr class="table-primary">
+                <th>Total</th>
+                <th class="text-end">
+                  Rs. {{ "%.2f"|format(
+                  aging_receivables['0-30']|sum(attribute='amount') +
+                  aging_receivables['31-60']|sum(attribute='amount') +
+                  aging_receivables['61-90']|sum(attribute='amount') +
+                  aging_receivables['90+']|sum(attribute='amount') ) }}
+                </th>
+                <th class="text-end">
+                  {{ aging_receivables['0-30']|length +
+                  aging_receivables['31-60']|length +
+                  aging_receivables['61-90']|length +
+                  aging_receivables['90+']|length }}
+                </th>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h6 class="mt-4">Details</h6>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Customer</th>
+                <th>Date</th>
+                <th>Days</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aging in ['0-30', '31-60', '61-90', '90+'] %} {% for item
+              in aging_receivables[aging] %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('sales.order_detail', order_id=item.id) }}"
+                    >#{{ item.id }}</a
+                  >
+                </td>
+                <td>{{ item.customer }}</td>
+                <td>{{ item.date }}</td>
+                <td>{{ item.days_due }}</td>
+                <td class="text-end">Rs. {{ "%.2f"|format(item.amount) }}</td>
+              </tr>
+              {% endfor %} {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card mb-4">
+      <div class="card-header bg-warning text-white">
+        <h5 class="mb-0">Accounts Payable (Money We Owe)</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <table class="table table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Aging</th>
+                <th class="text-end">Amount</th>
+                <th class="text-end">Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>0-30 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_payables['0-30']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_payables['0-30']|length }}</td>
+              </tr>
+              <tr>
+                <td>31-60 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_payables['31-60']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_payables['31-60']|length }}</td>
+              </tr>
+              <tr>
+                <td>61-90 Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_payables['61-90']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_payables['61-90']|length }}</td>
+              </tr>
+              <tr>
+                <td>90+ Days</td>
+                <td class="text-end">
+                  Rs. {{
+                  "%.2f"|format(aging_payables['90+']|sum(attribute='amount'))
+                  }}
+                </td>
+                <td class="text-end">{{ aging_payables['90+']|length }}</td>
+              </tr>
+              <tr class="table-primary">
+                <th>Total</th>
+                <th class="text-end">
+                  Rs. {{ "%.2f"|format(
+                  aging_payables['0-30']|sum(attribute='amount') +
+                  aging_payables['31-60']|sum(attribute='amount') +
+                  aging_payables['61-90']|sum(attribute='amount') +
+                  aging_payables['90+']|sum(attribute='amount') ) }}
+                </th>
+                <th class="text-end">
+                  {{ aging_payables['0-30']|length +
+                  aging_payables['31-60']|length +
+                  aging_payables['61-90']|length + aging_payables['90+']|length
+                  }}
+                </th>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h6 class="mt-4">Details</h6>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>PO #</th>
+                <th>Distributor</th>
+                <th>Date</th>
+                <th>Days</th>
+                <th class="text-end">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for aging in ['0-30', '31-60', '61-90', '90+'] %} {% for item
+              in aging_payables[aging] %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('purchases.purchase_order_detail', id=item.id) }}"
+                    >#{{ item.id }}</a
+                  >
+                </td>
+                <td>{{ item.distributor }}</td>
+                <td>{{ item.date }}</td>
+                <td>{{ item.days }}</td>
+                <td class="text-end">Rs. {{ "%.2f"|format(item.amount) }}</td>
+              </tr>
+              {% endfor %} {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

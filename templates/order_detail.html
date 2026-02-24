@@ -1,0 +1,186 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Order #{{ order.id }}</h3>
+  <div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+    {% if order.status == 'approved' %}
+    <a
+      href="{{ url_for('sales.receipt', order_id=order.id) }}"
+      class="btn btn-success"
+    >
+      <i class="bi bi-receipt"></i> Receipt
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <form method="POST">
+      <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">Order Items</h5>
+        </div>
+        <div class="card-body">
+          <table class="table table-bordered">
+            <thead class="table-dark">
+              <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                {% if current_user.role == 'admin' and order.status == 'draft'
+                %}
+                <th>Price (Rs.)</th>
+                {% elif order.status == 'approved' %}
+                <th>Price (Rs.)</th>
+                <th>Total (Rs.)</th>
+                {% endif %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                {% if current_user.role == 'admin' and order.status == 'draft'
+                %}
+                <td>
+                  <input
+                    type="number"
+                    step="0.01"
+                    name="price_{{ item.id }}"
+                    class="form-control"
+                    value="{{ item.price or '' }}"
+                    required
+                  />
+                </td>
+                {% elif order.status == 'approved' %}
+                <td>Rs. {{ "%.2f"|format(item.price) }}</td>
+                <td>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</td>
+                {% endif %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        {% if current_user.role == 'admin' and order.status == 'draft' %}
+        <div class="card-footer">
+          <button class="btn btn-primary">
+            <i class="bi bi-check-circle"></i> Approve Order
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card mb-4">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Order Summary</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          <strong>Status:</strong>
+          <span
+            class="badge {% if order.status == 'approved' %}bg-success{% else %}bg-warning{% endif %}"
+          >
+            {{ order.status }}
+          </span>
+        </p>
+
+        {% if order.order_type == 'credit_sale' %}
+        <p>
+          <strong>Order Type:</strong>
+          <span class="badge bg-info">Credit Sale</span>
+        </p>
+        <p><strong>Customer:</strong> {{ order.customer_name or 'N/A' }}</p>
+        <p><strong>Phone:</strong> {{ order.customer_phone or 'N/A' }}</p>
+        {% endif %}
+
+        <p>
+          <strong>Total Amount:</strong> Rs. {{
+          "%.2f"|format(order.total_amount) }}
+        </p>
+
+        {% if order.order_type == 'credit_sale' %}
+        <p>
+          <strong>Amount Paid:</strong>
+          <span class="text-success"
+            >Rs. {{ "%.2f"|format(order.amount_paid) }}</span
+          >
+        </p>
+        <p>
+          <strong>Remaining:</strong>
+          <span class="text-danger"
+            >Rs. {{ "%.2f"|format(order.remaining_amount) }}</span
+          >
+        </p>
+        {% if order.due_date %}
+        <p>
+          <strong>Due Date:</strong> {{ order.due_date.strftime('%Y-%m-%d') }}
+        </p>
+        {% endif %} {% endif %}
+
+        <p><strong>Created By:</strong> {{ order.creator.username }}</p>
+        <p>
+          <strong>Created At:</strong> {{ order.created_at.strftime('%Y-%m-%d
+          %H:%M') }}
+        </p>
+
+        {% if order.approver %}
+        <p><strong>Approved By:</strong> {{ order.approver.username }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if order.order_type == 'credit_sale' and order.status == 'approved' and
+    order.remaining_amount > 0 %}
+    <div class="card">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Record Payment</h5>
+      </div>
+      <div class="card-body">
+        <form
+          method="POST"
+          action="{{ url_for('sales.add_order_payment', order_id=order.id) }}"
+        >
+          <div class="mb-3">
+            <label class="form-label"
+              >Amount (Max: Rs. {{ "%.2f"|format(order.remaining_amount)
+              }})</label
+            >
+            <input
+              type="number"
+              name="amount"
+              class="form-control"
+              step="0.01"
+              max="{{ order.remaining_amount }}"
+              min="0.01"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Payment Method</label>
+            <select name="payment_method" class="form-select" required>
+              <option value="cash">Cash</option>
+              <option value="bank_transfer">Bank Transfer</option>
+              <option value="credit_card">Credit Card</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea name="notes" class="form-control" rows="2"></textarea>
+          </div>
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-cash"></i> Record Payment
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

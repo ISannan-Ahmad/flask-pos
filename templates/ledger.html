@@ -1,0 +1,133 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>General Ledger</h3>
+</div>
+
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Transaction Type</label>
+        <select name="type" class="form-select">
+          <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>
+            All
+          </option>
+          <option value="credit" {% if transaction_type == 'credit' %}selected{% endif %}>
+            Credit (In)
+          </option>
+          <option value="debit" {% if transaction_type == 'debit' %}selected{% endif %}>
+            Debit (Out)
+          </option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Start Date</label>
+        <input
+          type="date"
+          name="start_date"
+          class="form-control"
+          value="{{ start_date }}"
+        />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">End Date</label>
+        <input
+          type="date"
+          name="end_date"
+          class="form-control"
+          value="{{ end_date }}"
+        />
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ url_for('analytics.ledger') }}" class="btn btn-secondary ms-2"
+          >Clear</a
+        >
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6">
+    <div class="card bg-success text-white">
+      <div class="card-body">
+        <h5><i class="bi bi-arrow-down-circle"></i> Owed To Us (Receivables)</h5>
+        <h3 class="mb-0">Rs. {{ "%.2f"|format(total_receivables) }}</h3>
+        <small>Money customers owe us</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card bg-danger text-white">
+      <div class="card-body">
+        <h5><i class="bi bi-arrow-up-circle"></i> We Owe (Payables)</h5>
+        <h3 class="mb-0">Rs. {{ "%.2f"|format(total_payables) }}</h3>
+        <small>Money we owe to distributors</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Entity & Details</th>
+            <th class="text-end">Debit (Out)</th>
+            <th class="text-end">Credit (In)</th>
+            <th class="text-end">Running Balance</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr>
+            <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              <span
+                class="badge {% if t.transaction_type == 'credit' %}bg-success{% else %}bg-danger{% endif %}"
+              >
+                {{ t.transaction_type }}
+              </span>
+            </td>
+            <td>
+              {% if t.order_id %} 
+                <strong>Customer:</strong> {{ t.order.customer_name or 'Walk-in' }}<br>
+                <small class="text-muted">Sale Order #{{ t.order_id }}</small>
+              {% elif t.purchase_order_id %} 
+                <strong>Distributor:</strong> {{ t.purchase_order.distributor.name }}<br>
+                <small class="text-muted">Purchase PO #{{ t.purchase_order_id }}</small>
+              {% elif t.distributor_id %} 
+                <strong>Distributor:</strong> {{ t.distributor.name }}<br>
+                <small class="text-muted">Direct Transaction</small>
+              {% elif t.customer_name %} 
+                <strong>Customer:</strong> {{ t.customer_name }}<br>
+                <small class="text-muted">Direct Transaction</small>
+              {% else %}
+                <strong>General</strong>
+              {% endif %}
+              
+              {% if t.reference %}<br><small>Ref: {{ t.reference }}</small>{% endif %}
+              {% if t.notes %}<br><small><em>{{ t.notes }}</em></small>{% endif %}
+            </td>
+            <td class="text-end">
+              {% if t.transaction_type == 'debit' %} Rs. {{
+              "%.2f"|format(t.amount) }} {% endif %}
+            </td>
+            <td class="text-end">
+              {% if t.transaction_type == 'credit' %} Rs. {{
+              "%.2f"|format(t.amount) }} {% endif %}
+            </td>
+            <td class="text-end">Rs. {{ "%.2f"|format(t.running_balance) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header bg-warning text-dark">
+        <h4>Edit Distributor: {{ distributor.name }}</h4>
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Company Name *</label>
+              <input type="text" name="name" class="form-control" value="{{ distributor.name }}" required />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact Person</label>
+              <input type="text" name="contact_person" class="form-control" value="{{ distributor.contact_person or '' }}" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Phone</label>
+              <input type="text" name="phone" class="form-control" value="{{ distributor.phone or '' }}" />
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" name="email" class="form-control" value="{{ distributor.email or '' }}" />
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Address</label>
+            <textarea name="address" class="form-control" rows="2">{{ distributor.address or '' }}</textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Payment Terms (days)</label>
+            <input
+              type="number"
+              name="payment_terms"
+              class="form-control"
+              value="{{ distributor.payment_terms }}"
+              min="0"
+              max="180"
+            />
+          </div>
+
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+          <a href="{{ url_for('distributors.list_distributors') }}" class="btn btn-secondary"
+            >Cancel</a
+          >
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block page_title %}Product Detail: {{ product.sku }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3 class="fw-bold mb-0">Item Dashboard</h3>
+  <a href="{{ url_for('products.products') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+    <i class="bi bi-arrow-left me-1"></i> Back to Catalog
+  </a>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-8 mb-4">
+    <div class="card border-0 shadow-sm rounded-4 h-100">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0 text-primary">{{ product.name }}</h3>
+            <span class="badge {% if product.stock_quantity <= product.min_stock_level %}bg-danger{% else %}bg-success{% endif %} fs-6 px-3 py-2 rounded-pill shadow-sm">
+              Stock: {{ product.stock_quantity }}
+            </span>
+        </div>
+        <p class="text-muted lead">{{ product.description or 'No description provided.' }}</p>
+        
+        <hr class="my-4">
+        
+        <div class="row g-4">
+            <div class="col-sm-6">
+                <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">SKU Code</p>
+                <div class="fs-5">{{ product.sku or product.id }}</div>
+            </div>
+            <div class="col-sm-6">
+                <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">Part Number</p>
+                <div class="fs-5">{{ product.part_number or 'N/A' }}</div>
+            </div>
+            <div class="col-sm-6">
+                <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">Target Vehicle / Model</p>
+                <div class="fs-5">
+                    {% if product.vehicle_type %}<span class="badge bg-secondary me-2">{{ product.vehicle_type }}</span>{% endif %}
+                    {{ product.vehicle_model or 'Universal' }}
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">Supplier / Distributor</p>
+                <div class="fs-5">
+                    {% if product.distributor %}
+                    <i class="bi bi-truck text-primary me-2"></i>{{ product.distributor.name }}
+                    {% else %}
+                    <span class="text-muted">Independent</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if current_user.role == 'admin' %}
+            <div class="col-sm-6 mt-4">
+                <div class="p-3 bg-light rounded-4">
+                    <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">Cost Price</p>
+                    <div class="fs-4 fw-bold text-danger">Rs. {{ "%.2f"|format(product.cost_price) }}</div>
+                </div>
+            </div>
+            <div class="col-sm-6 mt-4">
+                <div class="p-3 bg-light rounded-4">
+                    <p class="text-muted small text-uppercase fw-bold tracking-wider mb-1">Selling Price</p>
+                    <div class="fs-4 fw-bold text-success">Rs. {{ "%.2f"|format(product.selling_price) }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-4">
+    {% if current_user.role == 'admin' %}
+    <div class="card border-0 shadow-sm rounded-4 bg-primary text-white mb-4">
+      <div class="card-body p-4 text-center">
+        <h5 class="fw-bold mb-3"><i class="bi bi-box-arrow-in-down mb-2 d-block fs-1"></i> Quick Restock</h5>
+        <a href="{{ url_for('products.restock_product', id=product.id) }}" class="btn btn-warning w-100 py-3 rounded-pill fw-bold shadow-sm fs-5">
+          Restock Item
+        </a>
+      </div>
+    </div>
+    
+    <div class="d-grid gap-2">
+        <a href="{{ url_for('products.edit_product', id=product.id) }}" class="btn btn-outline-primary py-3 rounded-4 fw-bold">
+            <i class="bi bi-pencil-square me-2"></i> Edit Product Details
+        </a>
+        <a href="{{ url_for('products.delete_product', id=product.id) }}" class="btn btn-outline-danger py-3 rounded-4 fw-bold" onclick="return confirm('WARNING: Are you sure you want to delete this product?');">
+            <i class="bi bi-trash me-2"></i> Delete Product
+        </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Recent Sales Activity</h5>
+                {% if recent_sales %}
+                <ul class="list-group list-group-flush">
+                    {% for item in recent_sales %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-3 border-bottom">
+                        <div>
+                            <div class="fw-bold"><a href="{{ url_for('sales.order_detail', order_id=item.order.id) }}" class="text-decoration-none">Order #{{ item.order.id }}</a></div>
+                            <small class="text-muted">{{ item.order.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <span class="badge bg-success rounded-pill px-3 py-2">-{{ item.quantity }} Sold</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-4">No recent sales.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">Recent Restocks (Purchases)</h5>
+                {% if recent_purchases %}
+                <ul class="list-group list-group-flush">
+                    {% for item in recent_purchases %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center border-0 px-0 py-3 border-bottom">
+                        <div>
+                            <div class="fw-bold"><a href="{{ url_for('purchases.purchase_order_detail', id=item.purchase_order.id) }}" class="text-decoration-none">PO #{{ item.purchase_order.id }}</a></div>
+                            <small class="text-muted">{{ item.purchase_order.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2">+{{ item.quantity }} Added</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted text-center py-4">No recent stock additions.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

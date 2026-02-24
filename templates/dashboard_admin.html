@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block page_title %}Administrator Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-5">
+  <div class="col-md-3 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-white">
+      <div class="card-body p-4 d-flex align-items-center">
+        <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+          <i class="bi bi-cart text-primary fs-3"></i>
+        </div>
+        <div>
+          <h6 class="text-muted text-uppercase small fw-bold mb-1">Pending POs</h6>
+          <h3 class="mb-0 fw-bold">{{ pending_purchase_orders }}</h3>
+          <a href="{{ url_for('purchases.purchase_orders') }}" class="text-decoration-none small fw-bold">Review Now →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-white">
+      <div class="card-body p-4 d-flex align-items-center">
+        <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+          <i class="bi bi-arrow-down-left-circle text-success fs-3"></i>
+        </div>
+        <div>
+          <h6 class="text-muted text-uppercase small fw-bold mb-1">Receivables</h6>
+          <h4 class="mb-0 fw-bold">Rs. {{ "%.0f"|format(total_receivables) }}</h4>
+          <a href="{{ url_for('analytics.receivables') }}" class="text-decoration-none text-success small fw-bold">View Report →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-white">
+      <div class="card-body p-4 d-flex align-items-center">
+        <div class="bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+          <i class="bi bi-arrow-up-right-circle text-danger fs-3"></i>
+        </div>
+        <div>
+          <h6 class="text-muted text-uppercase small fw-bold mb-1">Payables</h6>
+          <h4 class="mb-0 fw-bold">Rs. {{ "%.0f"|format(total_payables) }}</h4>
+          <a href="{{ url_for('analytics.receivables') }}" class="text-decoration-none text-danger small fw-bold">View Report →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-md-3 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-white">
+      <div class="card-body p-4 d-flex align-items-center">
+        <div class="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+          <i class="bi bi-exclamation-triangle text-warning fs-3"></i>
+        </div>
+        <div>
+          <h6 class="text-muted text-uppercase small fw-bold mb-1">Low Stock</h6>
+          <h3 class="mb-0 fw-bold">{{ low_stock_products }}</h3>
+          <a href="{{ url_for('products.products') }}" class="text-decoration-none text-warning small fw-bold">Manage Items →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-md-6 mb-3">
+    <a href="{{ url_for('analytics.dashboard') }}" class="btn btn-primary w-100 py-3 rounded-4 shadow-sm fs-5">
+      <i class="bi bi-graph-up me-2"></i> Financial Analytics Workspace
+    </a>
+  </div>
+  <div class="col-md-6 mb-3">
+    <a href="{{ url_for('products.manage_products') }}" class="btn btn-dark w-100 py-3 rounded-4 shadow-sm fs-5">
+      <i class="bi bi-box-seam me-2"></i> Manage Inventory Products
+    </a>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h5 class="fw-bold mb-0">Recent Transactions</h5>
+      <a href="{{ url_for('sales.sales_history') }}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">View All</a>
+    </div>
+    
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="text-muted small text-uppercase bg-light">
+          <tr>
+            <th class="rounded-start">Order</th>
+            <th>Type</th>
+            <th>Customer</th>
+            <th>Status</th>
+            <th>Total Amount</th>
+            <th>Balance</th>
+            <th>Date</th>
+            <th class="text-end rounded-end">Action</th>
+          </tr>
+        </thead>
+        <tbody class="border-top-0">
+          {% for order in orders %}
+          <tr>
+            <td class="fw-bold">#{{ order.id }}</td>
+            <td>
+              {% if order.order_type == 'credit_sale' %}
+              <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">Credit</span>
+              {% else %}
+              <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Cash</span>
+              {% endif %}
+            </td>
+            <td>{{ order.customer_name or 'Walk-in' }}</td>
+            <td>
+              <span class="badge {% if order.status == 'approved' %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-2">
+                {{ order.status|title }}
+              </span>
+            </td>
+            <td class="fw-bold">Rs. {{ "%.2f"|format(order.total_amount) }}</td>
+            <td class="{% if order.remaining_amount > 0 %}text-danger fw-bold{% endif %}">
+              Rs. {{ "%.2f"|format(order.remaining_amount) }}
+            </td>
+            <td class="text-muted small">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('sales.order_detail', order_id=order.id) }}" class="btn btn-sm btn-light rounded-pill px-3 fw-bold">View</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      
+      {% if not orders %}
+      <div class="text-center py-5 text-muted">
+        <i class="bi bi-clock-history display-4 mb-3"></i>
+        <p>No transactions available yet.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

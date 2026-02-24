@@ -1,0 +1,157 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Create Purchase Order</h3>
+  <a href="{{ url_for('purchases.purchase_orders') }}" class="btn btn-secondary">
+    <i class="bi bi-arrow-left"></i> Back to Purchase Orders
+  </a>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="POST" id="poForm">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Distributor *</label>
+          <select name="distributor_id" class="form-select" required>
+            <option value="">Select Distributor</option>
+            {% for dist in distributors %}
+            <option value="{{ dist.id }}" {% if request.args.get('distributor') == dist.id|string %}selected{% endif %}>
+              {{ dist.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Invoice Number (Optional)</label>
+          <input type="text" name="invoice_number" class="form-control">
+        </div>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control" rows="2"></textarea>
+      </div>
+      
+      <h5 class="mt-4">Items</h5>
+      <div id="items-container">
+        <div class="row mb-2 item-row">
+          <div class="col-md-5">
+            <select name="product_id[]" class="form-select product-select" required>
+              <option value="">Select Product</option>
+              {% for product in products %}
+              <option value="{{ product.id }}" data-price="{{ product.cost_price }}">
+                {{ product.name }} ({{ product.sku }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <input type="number" name="quantity[]" class="form-control quantity" placeholder="Qty" min="1" required>
+          </div>
+          <div class="col-md-2">
+            <input type="number" name="unit_cost[]" class="form-control unit-cost" placeholder="Unit Cost" step="0.01" min="0" required>
+          </div>
+          <div class="col-md-2">
+            <input type="text" class="form-control item-total" placeholder="Total" readonly>
+          </div>
+          <div class="col-md-1">
+            <button type="button" class="btn btn-danger btn-sm remove-item" style="display: none;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <button type="button" class="btn btn-secondary mb-3" id="add-item">
+        <i class="bi bi-plus-circle"></i> Add Item
+      </button>
+      
+      <div class="row mt-3">
+        <div class="col-md-6 offset-md-6">
+          <table class="table">
+            <tr>
+              <th>Total Amount:</th>
+              <td class="text-end"><span id="total-amount">0.00</span></td>
+            </tr>
+          </table>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn btn-success">Create Purchase Order</button>
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const container = document.getElementById('items-container');
+  const addButton = document.getElementById('add-item');
+  
+  function updateItemTotal(row) {
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const cost = parseFloat(row.querySelector('.unit-cost').value) || 0;
+    row.querySelector('.item-total').value = (qty * cost).toFixed(2);
+    updateTotal();
+  }
+  
+  function updateTotal() {
+    let total = 0;
+    document.querySelectorAll('.item-total').forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+    document.getElementById('total-amount').textContent = total.toFixed(2);
+  }
+  
+  function setupRow(row) {
+    const qtyInput = row.querySelector('.quantity');
+    const costInput = row.querySelector('.unit-cost');
+    const productSelect = row.querySelector('.product-select');
+    const removeBtn = row.querySelector('.remove-item');
+    
+    qtyInput.addEventListener('input', () => updateItemTotal(row));
+    costInput.addEventListener('input', () => updateItemTotal(row));
+    
+    productSelect.addEventListener('change', function() {
+      const selected = this.options[this.selectedIndex];
+      const price = selected.dataset.price;
+      if (price) {
+        costInput.value = price;
+        updateItemTotal(row);
+      }
+    });
+    
+    removeBtn.addEventListener('click', function() {
+      row.remove();
+      updateTotal();
+      // Show/hide remove buttons based on number of rows
+      const rows = document.querySelectorAll('.item-row');
+      rows.forEach((r, index) => {
+        r.querySelector('.remove-item').style.display = rows.length > 1 ? 'inline-block' : 'none';
+      });
+    });
+  }
+  
+  addButton.addEventListener('click', function() {
+    const firstRow = document.querySelector('.item-row');
+    const newRow = firstRow.cloneNode(true);
+    
+    // Clear inputs
+    newRow.querySelectorAll('input').forEach(input => {
+      if (input.type !== 'button') input.value = '';
+    });
+    newRow.querySelector('.product-select').value = '';
+    
+    container.appendChild(newRow);
+    setupRow(newRow);
+    
+    // Show remove buttons
+    document.querySelectorAll('.remove-item').forEach(btn => {
+      btn.style.display = 'inline-block';
+    });
+  });
+  
+  // Setup existing rows
+  document.querySelectorAll('.item-row').forEach(setupRow);
+});
+</script>
+{% endblock %}

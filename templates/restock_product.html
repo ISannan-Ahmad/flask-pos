@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block page_title %}Restock Product: {{ product.sku }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h3 class="fw-bold mb-0">Restock Item</h3>
+      <a href="{{ url_for('products.product_detail', id=product.id) }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+        <i class="bi bi-arrow-left me-2"></i> Cancel
+      </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-5">
+        
+        <div class="mb-5 pb-4 border-bottom">
+            <h5 class="fw-bold text-primary mb-1">{{ product.name }}</h5>
+            <div class="text-muted small text-uppercase tracking-wider fw-bold">
+                Target Vehicle: {{ product.vehicle_model or 'Universal' }}
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-sm-6">
+                    <p class="text-muted small text-uppercase fw-bold mb-1">Current Stock</p>
+                    <div class="fs-5 fw-bold">{{ product.stock_quantity }} units</div>
+                </div>
+                <div class="col-sm-6">
+                    <p class="text-muted small text-uppercase fw-bold mb-1">Distributor</p>
+                    <div class="fs-5">
+                        {% if product.distributor %}
+                        <i class="bi bi-truck text-primary me-2"></i>{{ product.distributor.name }}
+                        {% else %}
+                        <span class="text-muted">Independent / Unknown</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST">
+          <h6 class="text-uppercase text-muted fw-bold small tracking-wider mb-4">Restock Information</h6>
+          
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Quantity Received *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-boxes text-muted"></i></span>
+                <input type="number" name="quantity" class="form-control border-start-0 ps-0" placeholder="Number of units" min="1" required>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-md-6">
+              <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">New Cost Price (Rs.) *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">Rs.</span>
+                <input type="number" name="cost_price" class="form-control border-start-0 ps-0 text-danger fw-bold" step="0.01" min="0" value="{{ '%.2f'|format(product.cost_price or 0) }}" required>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">New Selling Price (Rs.) *</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">Rs.</span>
+                <input type="number" name="selling_price" class="form-control border-start-0 ps-0 text-success fw-bold" step="0.01" min="0" value="{{ '%.2f'|format(product.selling_price or 0) }}" required>
+              </div>
+            </div>
+          </div>
+
+          {% if product.distributor %}
+          <div class="p-4 bg-light rounded-4 mb-4">
+            <div class="d-flex align-items-center mb-3">
+              <i class="bi bi-receipt text-primary fs-4 me-3"></i>
+              <div>
+                <h6 class="mb-0 fw-bold">Purchase Order Payment</h6>
+                <p class="text-muted small mb-0">Record the amount paid upfront to {{ product.distributor.name }}</p>
+              </div>
+            </div>
+            <label class="form-label tracking-wider fw-bold small text-muted text-uppercase">Amount Paid (Rs.)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-white border-end-0">Rs.</span>
+              <input type="number" name="amount_paid" class="form-control border-start-0 ps-0" step="0.01" min="0" value="0" placeholder="If not fully paid, remainder adds to ledger">
+            </div>
+            <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i> Balance will be added to the distributor's credit ledger.</div>
+          </div>
+          {% else %}
+          <div class="alert alert-warning border-0 rounded-4">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> This product has no distributor linked. Inventory will be updated, but no ledger invoice will be generated.
+          </div>
+          {% endif %}
+
+          <div class="d-grid mt-5">
+            <button class="btn btn-primary py-3 fs-5 rounded-pill shadow-sm fw-bold">
+              <i class="bi bi-check-circle me-2"></i> Confirm Restock Definition
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

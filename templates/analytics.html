@@ -1,0 +1,268 @@
+{% extends "base.html" %} {% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h3>Analytics Dashboard</h3>
+  <div>
+    <form method="GET" class="row g-2">
+      <div class="col-auto">
+        <select name="year" class="form-select">
+          {% for y in range(2020, 2028) %}
+          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
+            {{ y }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <select name="month" class="form-select">
+          <option value="">All Year</option>
+          {% for m in months %}
+          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
+            {{ month_names[m-1] }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Filter</button>
+      </div>
+      <div class="col-auto">
+        <a href="{{ url_for('analytics.receivables') }}" class="btn btn-warning"
+          >Receivables</a
+        >
+        <a href="{{ url_for('analytics.cashbook') }}" class="btn btn-info">Cash Book</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row">
+  <div class="col-md-3 mb-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <h5 class="card-title">Revenue</h5>
+        <h3>Rs. {{ "%.2f"|format(total_revenue) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-white bg-secondary">
+      <div class="card-body">
+        <h5 class="card-title">Purchases</h5>
+        <h3>Rs. {{ "%.2f"|format(total_purchases) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-white bg-warning text-dark">
+      <div class="card-body">
+        <h5 class="card-title text-dark">Expenses</h5>
+        <h3>Rs. {{ "%.2f"|format(total_expenses) }}</h3>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3 mb-3">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <h5 class="card-title">Net Profit</h5>
+        <h3>Rs. {{ "%.2f"|format(net_profit) }}</h3>
+        <small
+          >{{ "%.1f"|format((net_profit/total_revenue*100) if total_revenue >
+          0 else 0) }}% margin</small
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Credit Cards -->
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <div class="card text-white bg-danger">
+      <div class="card-body">
+        <h5 class="card-title">Receivables (Money Owed to Us)</h5>
+        <h3>Rs. {{ "%.2f"|format(total_receivables) }}</h3>
+        <a href="{{ url_for('analytics.receivables') }}" class="text-white"
+          >View Aging Report →</a
+        >
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-3">
+    <div class="card text-white bg-secondary">
+      <div class="card-body">
+        <h5 class="card-title">Payables (Money We Owe)</h5>
+        <h3>Rs. {{ "%.2f"|format(total_payables) }}</h3>
+        <a href="{{ url_for('analytics.aging_report') }}" class="text-white"
+          >View Aging Report →</a
+        >
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mt-4">
+  <div class="col-md-8 mb-3">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5>Monthly Sales - {{ selected_year }}</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="salesChart" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card h-100">
+      <div class="card-header">
+        <h5>Revenue Allocation</h5>
+      </div>
+      <div class="card-body">
+        <canvas id="profitExpenseChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Top Products -->
+<div class="row mt-4">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5>Top Selling Products</h5>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>SKU</th>
+              <th class="text-end">Sold</th>
+              <th class="text-end">Revenue</th>
+              <th class="text-end">Profit</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in top_products %}
+            <tr>
+              <td>{{ product.name }}</td>
+              <td>{{ product.sku }}</td>
+              <td class="text-end">{{ product.total_sold }}</td>
+              <td class="text-end">Rs. {{ "%.2f"|format(product.revenue) }}</td>
+              <td class="text-end">Rs. {{ "%.2f"|format(product.profit) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h5>Top Distributors</h5>
+      </div>
+      <div class="card-body">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Distributor</th>
+              <th class="text-end">Orders</th>
+              <th class="text-end">Purchases</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dist in top_distributors %}
+            <tr>
+              <td>{{ dist.name }}</td>
+              <td class="text-end">{{ dist.purchase_count }}</td>
+              <td class="text-end">
+                Rs. {{ "%.2f"|format(dist.total_purchases) }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: {{ month_names|tojson }},
+        datasets: [{
+          label: 'Sales (Rs.)',
+          data: {{ monthly_sales|tojson }},
+          borderColor: 'rgb(75, 192, 192)',
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return 'Rs. ' + value.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const cogs = {{ (total_revenue - gross_profit)|tojson }};
+    const expenses = {{ total_expenses|tojson }};
+    const profit = {{ (net_profit if net_profit > 0 else 0)|tojson }};
+
+    const ctxPie = document.getElementById('profitExpenseChart').getContext('2d');
+    new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: ['Cost of Goods', 'Expenses', 'Net Profit'],
+        datasets: [{
+          data: [cogs, expenses, profit],
+          backgroundColor: [
+            'rgb(54, 162, 235)', // Blue for COGS
+            'rgb(255, 99, 132)', // Red for Expenses
+            'rgb(75, 192, 192)'  // Green for Profit
+          ],
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                if (context.parsed !== null) {
+                  label += 'Rs. ' + context.parsed.toLocaleString();
+                }
+                return label;
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

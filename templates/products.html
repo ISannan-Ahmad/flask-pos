@@ -1,0 +1,98 @@
+{% extends "base.html" %} {% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h3 class="fw-bold mb-0">Inventory Catalog</h3>
+    <p class="text-muted small">Browse all available items</p>
+  </div>
+  
+  <div class="d-flex gap-2">
+    <div class="input-group" style="width: 300px;">
+      <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+      <input type="text" id="productSearch" class="form-control border-start-0 ps-0" placeholder="Search SKU, Name...">
+    </div>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('products.manage_products') }}" class="btn btn-warning rounded-pill shadow-sm px-4 fw-bold">
+      <i class="bi bi-gear me-1"></i> Manage
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" id="productsTable">
+        <thead class="bg-light text-muted small text-uppercase tracking-wider">
+          <tr>
+            <th class="ps-4">SKU Code</th>
+            <th>Item & Vehicle</th>
+            <th>Part Number</th>
+            <th>Availability</th>
+            <th class="pe-4 text-end">Action</th>
+          </tr>
+        </thead>
+
+        <tbody class="border-top-0">
+          {% for product in products %}
+          <tr style="cursor: pointer;" onclick="window.location.href='{{ url_for('products.product_detail', id=product.id) }}';">
+            <td class="fw-bold text-muted ps-4">{{ product.sku or product.id }}</td>
+            <td>
+              <div class="fw-bold text-dark">{{ product.name }}</div>
+              {% if product.vehicle_model %}
+                <small class="text-muted"><i class="bi bi-car-front me-1"></i>{{ product.vehicle_model }}</small>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ product.part_number or 'N/A' }}</td>
+            <td>
+              {% if product.stock_quantity <= product.min_stock_level %}
+              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3 py-2">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ product.stock_quantity }} Left
+              </span>
+              {% else %} 
+              <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3 py-2">
+                {{ product.stock_quantity }} In Stock
+              </span>
+              {% endif %}
+            </td>
+            <td class="pe-4 text-end">
+              <i class="bi bi-chevron-right text-muted"></i>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+{% if not products %}
+<div class="text-center py-5 text-muted">
+  <i class="bi bi-box display-4 mb-3 opacity-50"></i>
+  <p>No products available in inventory.</p>
+</div>
+{% endif %} 
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('productSearch');
+    const table = document.getElementById('productsTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+    searchInput.addEventListener('keyup', function() {
+        const term = searchInput.value.toLowerCase();
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const textContent = row.textContent.toLowerCase();
+            
+            if (textContent.includes(term)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
