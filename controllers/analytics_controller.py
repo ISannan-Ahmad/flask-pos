@@ -1,4 +1,4 @@
-from models import Order, PurchaseOrder, Product, Distributor, OrderItem, CustomerTransaction, SupplierTransaction, Expense, CashTransaction
+from models import Order, PurchaseOrder, Product, Distributor, Customer, OrderItem, CustomerTransaction, SupplierTransaction, Expense, CashTransaction
 from extensions import db
 from sqlalchemy import func, extract
 from datetime import datetime, timedelta
@@ -196,3 +196,146 @@ class AnalyticsController:
             })
             
         return reversed(result) # return latest first but with correct running balance
+
+    @staticmethod
+    def get_receivables_data():
+        """Returns registered customer outstanding balances + walk-in unpaid orders."""
+        # Section 1: Registered customers with a positive balance (via CustomerTransaction ledger)
+        all_customers = Customer.query.all()
+        debtors = [c for c in all_customers if c.balance > 0]
+        total_registered = sum(c.balance for c in debtors)
+
+        # Section 2: Walk-in / unregistered orders that are not fully paid
+        walkin_orders = Order.query.filter(
+            Order.status == 'approved',
+            Order.customer_id == None,
+            Order.total_amount > Order.amount_paid
+        ).order_by(Order.created_at.desc()).all()
+        total_walkin = sum(float(o.total_amount) - float(o.amount_paid) for o in walkin_orders)
+
+        grand_total = float(total_registered) + total_walkin
+
+        return {
+            'debtors': debtors,
+            'walkin_orders': walkin_orders,
+            'total_registered': total_registered,
+            'total_walkin': total_walkin,
+            'grand_total': grand_total,
+        }
+
+    @staticmethod
+    def get_payables_data():
+        """Returns distributor outstanding balances with per-PO breakdown."""
+        all_distributors = Distributor.query.all()
+        creditors = []
+        for d in all_distributors:
+            if d.balance > 0:
+                outstanding_pos = PurchaseOrder.query.filter(
+                    PurchaseOrder.distributor_id == d.id,
+                    PurchaseOrder.payment_status != 'paid'
+                ).order_by(PurchaseOrder.created_at.desc()).all()
+                creditors.append({
+                    'distributor': d,
+                    'balance': d.balance,
+                    'outstanding_pos': outstanding_pos,
+                })
+        total_payable = sum(c['balance'] for c in creditors)
+        return {
+            'creditors': creditors,
+            'total_payable': total_payable,
+        }
+
+    @staticmethod
+    def get_ledger_entries(transaction_type, start_date, end_date):
+        """Returns unified CustomerTransaction + SupplierTransaction ledger with running balance."""
+        from datetime import datetime, timedelta
+
+        # Build customer transactions query
+        ct_query = CustomerTransaction.query
+        st_query = SupplierTransaction.query
+
+        if transaction_type == 'customer':
+            st_query = st_query.filter(False)  # exclude supplier entries
+        elif transaction_type == 'supplier':
+            ct_query = ct_query.filter(False)  # exclude customer entries
+
+        if start_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            ct_query = ct_query.filter(CustomerTransaction.created_at >= start_dt)
+            st_query = st_query.filter(SupplierTransaction.created_at >= start_dt)
+        if end_date:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1)
+            ct_query = ct_query.filter(CustomerTransaction.created_at <= end_dt)
+            st_query = st_query.filter(SupplierTransaction.created_at <= end_dt)
+
+        customer_txns = ct_query.all()
+        supplier_txns = st_query.all()
+
+        # Normalise into a unified list
+        entries = []
+        for t in customer_txns:
+            entries.append({
+                'created_at': t.created_at,
+                'ledger': 'customer',
+                'entity': t.customer.name if t.customer else 'Unknown',
+                'entity_id': t.customer_id,
+                'transaction_type': t.transaction_type,   # 'receivable' or 'payment'
+                'amount': float(t.amount),
+                'reference': t.reference,
+                'notes': t.notes,
+                'payment_method': t.payment_method,
+                'order_id': t.order_id,
+                'purchase_order_id': None,
+            })
+        for t in supplier_txns:
+            entries.append({
+                'created_at': t.created_at,
+                'ledger': 'supplier',
+                'entity': t.distributor.name if t.distributor else 'Unknown',
+                'entity_id': t.distributor_id,
+                'transaction_type': t.transaction_type,   # 'payable' or 'payment'
+                'amount': float(t.amount),
+                'reference': t.reference,
+                'notes': t.notes,
+                'payment_method': t.payment_method,
+                'order_id': None,
+                'purchase_order_id': t.purchase_order_id,
+            })
+
+        # Sort by date ascending for running balance, then reverse for display
+        entries.sort(key=lambda x: x['created_at'])
+
+        # Running balance: receivable/payable increases what is owed, payment decreases it
+        balance = 0.0
+        for e in entries:
+            if e['transaction_type'] in ('receivable',):   # customer owes us more
+                balance += e['amount']
+            elif e['ledger'] == 'customer' and e['transaction_type'] == 'payment':
+                balance -= e['amount']                      # customer paid us
+            elif e['transaction_type'] == 'payable':        # we owe supplier more
+                balance -= e['amount']
+            elif e['ledger'] == 'supplier' and e['transaction_type'] == 'payment':
+                balance += e['amount']                      # we paid supplier
+            e['running_balance'] = balance
+
+        # Compute summary totals (unfiltered for summary cards)
+        total_receivables = float(
+            db.session.query(func.sum(CustomerTransaction.amount))
+            .filter(CustomerTransaction.transaction_type == 'receivable').scalar() or 0
+        ) - float(
+            db.session.query(func.sum(CustomerTransaction.amount))
+            .filter(CustomerTransaction.transaction_type == 'payment').scalar() or 0
+        )
+        total_payables = float(
+            db.session.query(func.sum(SupplierTransaction.amount))
+            .filter(SupplierTransaction.transaction_type == 'payable').scalar() or 0
+        ) - float(
+            db.session.query(func.sum(SupplierTransaction.amount))
+            .filter(SupplierTransaction.transaction_type == 'payment').scalar() or 0
+        )
+
+        return {
+            'transactions': list(reversed(entries)),
+            'total_receivables': max(total_receivables, 0),
+            'total_payables': max(total_payables, 0),
+        }

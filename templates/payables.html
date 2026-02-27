@@ -16,36 +16,72 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <table class="table table-hover align-middle">
+{% for creditor in creditors %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <strong>{{ creditor.distributor.name }}</strong>
+            {% if creditor.distributor.contact_person %}
+            <span class="text-muted ms-2">— {{ creditor.distributor.contact_person }}</span>
+            {% endif %}
+            {% if creditor.distributor.phone %}
+            <span class="ms-2 text-muted small"><i class="bi bi-telephone"></i> {{ creditor.distributor.phone }}</span>
+            {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-danger fs-6">Balance: Rs. {{ "%.2f"|format(creditor.balance) }}</span>
+            <a href="{{ url_for('distributors.detail', distributor_id=creditor.distributor.id) }}" class="btn btn-sm btn-outline-success">
+                Settle Debt &amp; History
+            </a>
+        </div>
+    </div>
+
+    {% if creditor.outstanding_pos %}
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
-                    <th>Distributor Name</th>
-                    <th>Contact Person</th>
-                    <th>Phone</th>
-                    <th>Balance Owed by Us</th>
-                    <th>Actions</th>
+                    <th>PO #</th>
+                    <th>Invoice #</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th class="text-danger">Remaining</th>
+                    <th>Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
-                {% for creditor in creditors %}
+                {% for po in creditor.outstanding_pos %}
                 <tr>
-                    <td>{{ creditor.name }}</td>
-                    <td>{{ creditor.contact_person or 'N/A' }}</td>
-                    <td>{{ creditor.phone or 'N/A' }}</td>
-                    <td class="text-danger fw-bold">Rs. {{ "%.2f"|format(creditor.balance) }}</td>
+                    <td><span class="badge bg-light text-dark border">#{{ po.id }}</span></td>
+                    <td>{{ po.invoice_number or '—' }}</td>
+                    <td>{{ po.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>Rs. {{ "%.2f"|format(po.total_amount) }}</td>
+                    <td class="text-success">Rs. {{ "%.2f"|format(po.amount_paid) }}</td>
+                    <td class="text-danger fw-bold">Rs. {{ "%.2f"|format(po.total_amount - po.amount_paid) }}</td>
                     <td>
-                        <a href="{{ url_for('distributors.detail', distributor_id=creditor.id) }}" class="btn btn-sm btn-outline-success">Settle Debt & History</a>
+                        <span class="badge {% if po.payment_status == 'partial' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                            {{ po.payment_status|title }}
+                        </span>
                     </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No outstanding payables currently!</td>
+                    <td>
+                        <a href="{{ url_for('purchases.purchase_order_detail', po_id=po.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div class="card-body text-muted small">No outstanding purchase orders found (balance may be from direct transactions).</div>
+    {% endif %}
 </div>
+{% else %}
+<div class="card shadow-sm">
+    <div class="card-body text-center text-muted py-4">No outstanding payables currently!</div>
+</div>
+{% endfor %}
 {% endblock %}

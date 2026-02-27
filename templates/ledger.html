@@ -1,53 +1,39 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h3>General Ledger</h3>
+    <h3>General Ledger</h3>
 </div>
 
+<!-- Filter Form -->
 <div class="card mb-4">
   <div class="card-body">
     <form method="GET" class="row g-3">
       <div class="col-md-3">
-        <label class="form-label">Transaction Type</label>
+        <label class="form-label">Ledger</label>
         <select name="type" class="form-select">
-          <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>
-            All
-          </option>
-          <option value="credit" {% if transaction_type == 'credit' %}selected{% endif %}>
-            Credit (In)
-          </option>
-          <option value="debit" {% if transaction_type == 'debit' %}selected{% endif %}>
-            Debit (Out)
-          </option>
+          <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>All Transactions</option>
+          <option value="customer" {% if transaction_type == 'customer' %}selected{% endif %}>Customer Transactions</option>
+          <option value="supplier" {% if transaction_type == 'supplier' %}selected{% endif %}>Supplier Transactions</option>
         </select>
       </div>
       <div class="col-md-3">
         <label class="form-label">Start Date</label>
-        <input
-          type="date"
-          name="start_date"
-          class="form-control"
-          value="{{ start_date }}"
-        />
+        <input type="date" name="start_date" class="form-control" value="{{ start_date }}" />
       </div>
       <div class="col-md-3">
         <label class="form-label">End Date</label>
-        <input
-          type="date"
-          name="end_date"
-          class="form-control"
-          value="{{ end_date }}"
-        />
+        <input type="date" name="end_date" class="form-control" value="{{ end_date }}" />
       </div>
-      <div class="col-md-3 d-flex align-items-end">
+      <div class="col-md-3 d-flex align-items-end gap-2">
         <button type="submit" class="btn btn-primary">Filter</button>
-        <a href="{{ url_for('analytics.ledger') }}" class="btn btn-secondary ms-2"
-          >Clear</a
-        >
+        <a href="{{ url_for('analytics.ledger') }}" class="btn btn-secondary">Clear</a>
       </div>
     </form>
   </div>
 </div>
 
+<!-- Summary Cards -->
 <div class="row mb-4">
   <div class="col-md-6">
     <div class="card bg-success text-white">
@@ -69,6 +55,7 @@
   </div>
 </div>
 
+<!-- Ledger Table -->
 <div class="card">
   <div class="card-body">
     <div class="table-responsive">
@@ -76,8 +63,9 @@
         <thead class="table-dark">
           <tr>
             <th>Date</th>
+            <th>Ledger</th>
+            <th>Entity &amp; Details</th>
             <th>Type</th>
-            <th>Entity & Details</th>
             <th class="text-end">Debit (Out)</th>
             <th class="text-end">Credit (In)</th>
             <th class="text-end">Running Balance</th>
@@ -88,41 +76,48 @@
           <tr>
             <td>{{ t.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
             <td>
-              <span
-                class="badge {% if t.transaction_type == 'credit' %}bg-success{% else %}bg-danger{% endif %}"
-              >
-                {{ t.transaction_type }}
+              <span class="badge {% if t.ledger == 'customer' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+                {{ t.ledger|title }}
               </span>
             </td>
             <td>
-              {% if t.order_id %} 
-                <strong>Customer:</strong> {{ t.order.customer_name or 'Walk-in' }}<br>
-                <small class="text-muted">Sale Order #{{ t.order_id }}</small>
-              {% elif t.purchase_order_id %} 
-                <strong>Distributor:</strong> {{ t.purchase_order.distributor.name }}<br>
-                <small class="text-muted">Purchase PO #{{ t.purchase_order_id }}</small>
-              {% elif t.distributor_id %} 
-                <strong>Distributor:</strong> {{ t.distributor.name }}<br>
-                <small class="text-muted">Direct Transaction</small>
-              {% elif t.customer_name %} 
-                <strong>Customer:</strong> {{ t.customer_name }}<br>
-                <small class="text-muted">Direct Transaction</small>
-              {% else %}
-                <strong>General</strong>
+              <strong>{{ t.entity }}</strong>
+              {% if t.order_id %}
+                <br><small class="text-muted">Sale Order #{{ t.order_id }}</small>
+              {% elif t.purchase_order_id %}
+                <br><small class="text-muted">Purchase PO #{{ t.purchase_order_id }}</small>
               {% endif %}
-              
               {% if t.reference %}<br><small>Ref: {{ t.reference }}</small>{% endif %}
               {% if t.notes %}<br><small><em>{{ t.notes }}</em></small>{% endif %}
             </td>
-            <td class="text-end">
-              {% if t.transaction_type == 'debit' %} Rs. {{
-              "%.2f"|format(t.amount) }} {% endif %}
+            <td>
+              <span class="badge
+                {% if t.transaction_type == 'receivable' %}bg-success
+                {% elif t.transaction_type == 'payable' %}bg-danger
+                {% else %}bg-secondary
+                {% endif %}">
+                {{ t.transaction_type|title }}
+              </span>
             </td>
-            <td class="text-end">
-              {% if t.transaction_type == 'credit' %} Rs. {{
-              "%.2f"|format(t.amount) }} {% endif %}
+            <td class="text-end text-danger fw-bold">
+              {# Debit = we pay out: supplier payment or customer receivable #}
+              {% if t.transaction_type == 'payable' %}
+                Rs. {{ "%.2f"|format(t.amount) }}
+              {% endif %}
             </td>
-            <td class="text-end">Rs. {{ "%.2f"|format(t.running_balance) }}</td>
+            <td class="text-end text-success fw-bold">
+              {# Credit = money comes in or reduces what we owe: receivable charged, payments received #}
+              {% if t.transaction_type in ('receivable', 'payment') %}
+                Rs. {{ "%.2f"|format(t.amount) }}
+              {% endif %}
+            </td>
+            <td class="text-end fw-bold {% if t.running_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+              Rs. {{ "%.2f"|format(t.running_balance) }}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">No transactions found for the selected filters.</td>
           </tr>
           {% endfor %}
         </tbody>

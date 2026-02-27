@@ -3,27 +3,51 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Accounts Receivable</h2>
+    <a href="{{ url_for('analytics.ledger') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-journal-text"></i> View General Ledger
+    </a>
 </div>
 
+<!-- Summary Cards -->
 <div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title">Registered Customers</h6>
+                <h3>Rs. {{ "%.2f"|format(total_registered) }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h6 class="card-title">Walk-in / Unregistered Unpaid</h6>
+                <h3>Rs. {{ "%.2f"|format(total_walkin) }}</h3>
+            </div>
+        </div>
+    </div>
     <div class="col-md-4">
         <div class="card text-white bg-warning">
             <div class="card-body">
-                <h5 class="card-title">Total Receivables</h5>
-                <h3>Rs. {{ "%.2f"|format(total_receivable) }}</h3>
+                <h6 class="card-title">Grand Total Receivables</h6>
+                <h3>Rs. {{ "%.2f"|format(grand_total) }}</h3>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <table class="table table-hover align-middle">
+<!-- Section 1: Registered Customers -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header fw-bold">
+        <i class="bi bi-people-fill text-primary"></i> Registered Customers with Outstanding Balance
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Customer Name</th>
                     <th>Phone</th>
-                    <th>Current Balance Owed</th>
+                    <th>Balance Owed</th>
                     <th>Credit Limit</th>
                     <th>Actions</th>
                 </tr>
@@ -36,12 +60,60 @@
                     <td class="text-danger fw-bold">Rs. {{ "%.2f"|format(debtor.balance) }}</td>
                     <td>Rs. {{ "%.2f"|format(debtor.credit_limit) }}</td>
                     <td>
-                        <a href="{{ url_for('customers.detail', customer_id=debtor.id) }}" class="btn btn-sm btn-outline-primary">Receive Payment & History</a>
+                        <a href="{{ url_for('customers.detail', customer_id=debtor.id) }}" class="btn btn-sm btn-outline-primary">
+                            Receive Payment &amp; History
+                        </a>
+                        <a href="{{ url_for('analytics.ledger') }}?type=customer" class="btn btn-sm btn-outline-secondary ms-1">
+                            <i class="bi bi-journal-text"></i> Ledger
+                        </a>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No customers currently owe money! Great job!</td>
+                    <td colspan="5" class="text-center text-muted py-4">No registered customers currently owe money.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Section 2: Walk-in / Unregistered Unpaid Orders -->
+<div class="card shadow-sm">
+    <div class="card-header fw-bold">
+        <i class="bi bi-receipt text-secondary"></i> Walk-in / Unregistered Unpaid Orders
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Order #</th>
+                    <th>Customer Name</th>
+                    <th>Date</th>
+                    <th>Total</th>
+                    <th>Amount Paid</th>
+                    <th class="text-danger">Outstanding</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in walkin_orders %}
+                <tr>
+                    <td><span class="badge bg-light text-dark border">#{{ order.id }}</span></td>
+                    <td>{{ order.customer_name or '—' }}</td>
+                    <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>Rs. {{ "%.2f"|format(order.total_amount) }}</td>
+                    <td class="text-success">Rs. {{ "%.2f"|format(order.amount_paid) }}</td>
+                    <td class="text-danger fw-bold">Rs. {{ "%.2f"|format(order.total_amount - order.amount_paid) }}</td>
+                    <td>
+                        <a href="{{ url_for('sales.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-info">
+                            <i class="bi bi-eye"></i> View Order
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">No unpaid walk-in orders found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
