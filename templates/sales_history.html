@@ -6,16 +6,74 @@
   </a>
 </div>
 
+<!-- Filter Bar -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row align-items-end g-2">
+      <div class="col-md-3">
+        <label class="form-label">Type</label>
+        <select name="type" class="form-select">
+          <option value="all" {% if order_type=='all' %}selected{% endif %}>All Orders</option>
+          <option value="sale" {% if order_type=='sale' %}selected{% endif %}>Cash Sales</option>
+          <option value="credit_sale" {% if order_type=='credit_sale' %}selected{% endif %}>Credit Sales</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">From</label>
+        <input type="date" name="start_date" class="form-control" value="{{ start_date }}" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">To</label>
+        <input type="date" name="end_date" class="form-control" value="{{ end_date }}" />
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary w-100">Filter</button>
+        <a href="{{ url_for('sales.sales_history') }}" class="btn btn-secondary w-100">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+  <div class="col-md-4 mb-3">
+    <div class="card border-start border-4 border-success">
+      <div class="card-body">
+        <h6 class="text-muted mb-1"><i class="bi bi-cash-stack text-success"></i> Cash Sales</h6>
+        <h4 class="fw-bold">Rs. {{ "%.2f"|format(cash_total) }}</h4>
+        <small class="text-muted">{{ cash_count }} orders</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card border-start border-4 border-info">
+      <div class="card-body">
+        <h6 class="text-muted mb-1"><i class="bi bi-credit-card text-info"></i> Credit Sales</h6>
+        <h4 class="fw-bold">Rs. {{ "%.2f"|format(credit_total) }}</h4>
+        <small class="text-muted">{{ credit_count }} orders</small>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-3">
+    <div class="card border-start border-4 border-primary">
+      <div class="card-body">
+        <h6 class="text-muted mb-1"><i class="bi bi-graph-up text-primary"></i> Total</h6>
+        <h4 class="fw-bold">Rs. {{ "%.2f"|format(grand_total) }}</h4>
+        <small class="text-muted">{{ total_count }} orders</small>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="card shadow-sm border-0">
   <div class="card-body">
     <div class="d-flex justify-content-between mb-3">
-        <h5 class="card-title">All Orders</h5>
-        <div class="input-group w-25">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="orderSearch" class="form-control" placeholder="Search orders...">
-        </div>
+      <h5 class="card-title">All Orders</h5>
+      <div class="input-group w-25">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="orderSearch" class="form-control" placeholder="Search orders...">
+      </div>
     </div>
-    
+
     <div class="table-responsive">
       <table class="table table-hover table-bordered" id="ordersTable">
         <thead class="table-dark">
@@ -35,8 +93,8 @@
           <tr>
             <td>#{{ order.id }}</td>
             <td>
-                {{ order.customer_name if order.customer_name else 'Walk-in' }}
-                {% if order.customer_phone %}<br><small class="text-muted">{{ order.customer_phone }}</small>{% endif %}
+              {{ order.customer_name if order.customer_name else 'Walk-in' }}
+              {% if order.customer_phone %}<br><small class="text-muted">{{ order.customer_phone }}</small>{% endif %}
             </td>
             <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
             <td>
@@ -47,7 +105,8 @@
               {% endif %}
             </td>
             <td>
-              <span class="badge {% if order.status == 'approved' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+              <span
+                class="badge {% if order.status == 'approved' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
                 {{ order.status|title }}
               </span>
             </td>
@@ -67,7 +126,7 @@
           {% endfor %}
         </tbody>
       </table>
-      
+
       {% if not orders %}
       <div class="alert alert-info border-0">
         <i class="bi bi-info-circle"></i> No sales history available yet.
@@ -78,27 +137,27 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('orderSearch');
     const table = document.getElementById('ordersTable');
-    if(table) {
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    if (table) {
+      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
 
-        searchInput.addEventListener('keyup', function() {
-            const term = searchInput.value.toLowerCase();
-            
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const textContent = row.textContent.toLowerCase();
-                
-                if (textContent.includes(term)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
+      searchInput.addEventListener('keyup', function () {
+        const term = searchInput.value.toLowerCase();
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const textContent = row.textContent.toLowerCase();
+
+          if (textContent.includes(term)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
     }
-});
+  });
 </script>
 {% endblock %}

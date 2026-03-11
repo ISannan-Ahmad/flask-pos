@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block page_title %}Defective Inventory{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0 text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Defective Products Log</h3>
+    <a href="{{ url_for('returns.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i> Back to Returns
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Date Logged</th>
+                        <th>Product Details</th>
+                        <th>Qty Logged</th>
+                        <th>Reference</th>
+                        <th>Logged By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in defective_inventory %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold">{{ movement.timestamp.strftime('%Y-%m-%d') }}</div>
+                            <small class="text-muted">{{ movement.timestamp.strftime('%I:%M %p') }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ movement.product.name }}</div>
+                            <small class="text-muted">SKU: {{ movement.product.sku or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-danger rounded-pill px-3 py-2 fs-6">+{{ movement.quantity_change
+                                }}</span>
+                        </td>
+                        <td>
+                            <div class="fw-bold">Return Order #{{ movement.reference_id }}</div>
+                            <small class="text-muted">Reason: Defective Product</small>
+                        </td>
+                        <td>{{ movement.user.username }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-shield-check fs-1 d-block mb-3 text-success"></i>
+                            No defective products currently logged!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

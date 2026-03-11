@@ -15,6 +15,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Phone</th>
+                    <th>Email</th>
                     <th>Address</th>
                     <th>Balance Owed</th>
                     <th>Actions</th>
@@ -25,12 +26,14 @@
                 <tr>
                     <td class="fw-bold">{{ customer.name }}</td>
                     <td>{{ customer.phone }}</td>
+                    <td>{{ customer.email or '—' }}</td>
                     <td>{{ customer.address }}</td>
                     <td class="{% if customer.balance > 0 %}text-danger fw-bold{% else %}text-success{% endif %}">
                         Rs. {{ "%.2f"|format(customer.balance) }}
                     </td>
                     <td>
-                        <a href="{{ url_for('customers.detail', customer_id=customer.id) }}" class="btn btn-sm btn-outline-primary">View Account</a>
+                        <a href="{{ url_for('customers.detail', customer_id=customer.id) }}"
+                            class="btn btn-sm btn-outline-primary">View Account</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -50,16 +53,20 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label>Name</label>
+                        <label>Name *</label>
                         <input type="text" name="name" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label>Phone</label>
+                        <label>Phone Number</label>
                         <input type="text" name="phone" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label>Address</label>
                         <input type="text" name="address" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label>Email Address</label>
+                        <input type="email" name="email" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label>Credit Limit (Rs.)</label>

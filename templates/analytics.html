@@ -1,268 +1,402 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+
+{% block page_title %}Analytics Dashboard{% endblock %}
+
+{% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h3>Analytics Dashboard</h3>
-  <div>
-    <form method="GET" class="row g-2">
-      <div class="col-auto">
-        <select name="year" class="form-select">
-          {% for y in range(2020, 2028) %}
-          <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>
-            {{ y }}
-          </option>
-          {% endfor %}
-        </select>
+  <h3 class="fw-bold mb-0">Analytics Dashboard</h3>
+  <form method="GET" class="d-flex gap-2 align-items-center">
+    <select name="year" class="form-select form-select-sm" style="width:100px">
+      {% for y in range(2020, 2028) %}
+      <option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <select name="month" class="form-select form-select-sm" style="width:110px">
+      <option value="">All Year</option>
+      {% for m in months %}
+      <option value="{{ m }}" {% if m==selected_month %}selected{% endif %}>{{ month_names[m-1] }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">Filter</button>
+  </form>
+</div>
+
+<!-- Financial Summary -->
+<div class="row mb-4">
+  <div class="col mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 border-primary hover-shadow"
+      style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='{{ url_for('sales.sales_history') }}';">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-currency-exchange text-primary fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Revenue</h6>
+        <h4 class="fw-bold mb-0">Rs. {{ "%.0f"|format(total_revenue) }}</h4>
       </div>
-      <div class="col-auto">
-        <select name="month" class="form-select">
-          <option value="">All Year</option>
-          {% for m in months %}
-          <option value="{{ m }}" {% if m == selected_month %}selected{% endif %}>
-            {{ month_names[m-1] }}
-          </option>
-          {% endfor %}
-        </select>
+    </div>
+  </div>
+  <div class="col mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 border-success">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-cash-stack text-success fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Gross Profit</h6>
+        <h4 class="fw-bold mb-0">Rs. {{ "%.0f"|format(gross_profit) }}</h4>
       </div>
-      <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Filter</button>
+    </div>
+  </div>
+  <div class="col mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 border-info hover-shadow"
+      style="cursor: pointer; transition: 0.2s;"
+      onclick="window.location.href='{{ url_for('purchases.purchase_orders') }}';">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-truck text-info fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Purchases</h6>
+        <h4 class="fw-bold mb-0">Rs. {{ "%.0f"|format(total_purchases) }}</h4>
       </div>
-      <div class="col-auto">
-        <a href="{{ url_for('analytics.receivables') }}" class="btn btn-warning"
-          >Receivables</a
-        >
-        <a href="{{ url_for('analytics.cashbook') }}" class="btn btn-info">Cash Book</a>
+    </div>
+  </div>
+  <div class="col mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 border-warning hover-shadow"
+      style="cursor: pointer; transition: 0.2s;"
+      onclick="window.location.href='{{ url_for('expenses.list_expenses') }}';">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-wallet2 text-warning fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Expenses</h6>
+        <h4 class="fw-bold mb-0">Rs. {{ "%.0f"|format(total_expenses) }}</h4>
       </div>
-    </form>
+    </div>
+  </div>
+  <div class="col mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 border-secondary hover-shadow"
+      style="cursor: pointer; transition: 0.2s;" onclick="window.location.href='{{ url_for('staff.staff_list') }}';">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-person-badge text-secondary fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Staff Expenses</h6>
+        <h4 class="fw-bold mb-0">Rs. {{ "%.0f"|format(total_staff_expenses) }}</h4>
+      </div>
+    </div>
+  </div>
+  <div class="col mb-3">
+    <div
+      class="card h-100 border-0 shadow-sm rounded-4 border-start border-4 {% if net_profit >= 0 %}border-success{% else %}border-danger{% endif %}">
+      <div class="card-body p-3 text-center">
+        <i class="bi bi-graph-up-arrow {% if net_profit >= 0 %}text-success{% else %}text-danger{% endif %} fs-4"></i>
+        <h6 class="text-muted small fw-bold mt-1 mb-1">Final Net Profit</h6>
+        <h4 class="fw-bold mb-0 {% if net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">Rs. {{
+          "%.0f"|format(net_profit) }}</h4>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Summary Cards -->
-<div class="row">
-  <div class="col-md-3 mb-3">
-    <div class="card text-white bg-primary">
-      <div class="card-body">
-        <h5 class="card-title">Revenue</h5>
-        <h3>Rs. {{ "%.2f"|format(total_revenue) }}</h3>
+<!-- Sales Metrics -->
+<div class="row mb-4">
+  <div class="col-md mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-3">
+        <h6 class="text-muted mb-1"><i class="bi bi-cash-stack text-success"></i> Cash Sales</h6>
+        <h4 class="fw-bold">Rs. {{ "%.0f"|format(cash_revenue) }}</h4>
+        <small class="text-muted">{{ cash_count }} orders</small>
       </div>
     </div>
   </div>
-  <div class="col-md-3 mb-3">
-    <div class="card text-white bg-secondary">
-      <div class="card-body">
-        <h5 class="card-title">Purchases</h5>
-        <h3>Rs. {{ "%.2f"|format(total_purchases) }}</h3>
+  <div class="col-md mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-3">
+        <h6 class="text-muted mb-1"><i class="bi bi-credit-card text-info"></i> Credit Sales</h6>
+        <h4 class="fw-bold">Rs. {{ "%.0f"|format(credit_revenue) }}</h4>
+        <small class="text-muted">{{ credit_count }} orders</small>
       </div>
     </div>
   </div>
-  <div class="col-md-3 mb-3">
-    <div class="card text-white bg-warning text-dark">
-      <div class="card-body">
-        <h5 class="card-title text-dark">Expenses</h5>
-        <h3>Rs. {{ "%.2f"|format(total_expenses) }}</h3>
+  <div class="col-md mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-3">
+        <h6 class="text-muted mb-1"><i class="bi bi-graph-up text-primary"></i> Total Sales</h6>
+        <h4 class="fw-bold">Rs. {{ "%.0f"|format(total_revenue) }}</h4>
+        <small class="text-muted">{{ total_orders }} orders</small>
       </div>
     </div>
   </div>
-  <div class="col-md-3 mb-3">
-    <div class="card text-white bg-success">
-      <div class="card-body">
-        <h5 class="card-title">Net Profit</h5>
-        <h3>Rs. {{ "%.2f"|format(net_profit) }}</h3>
-        <small
-          >{{ "%.1f"|format((net_profit/total_revenue*100) if total_revenue >
-          0 else 0) }}% margin</small
-        >
+  <div class="col-md mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4 hover-shadow" style="cursor: pointer; transition: 0.2s;"
+      onclick="window.location.href='{{ url_for('returns.customer_returns') }}';">
+      <div class="card-body p-3">
+        <h6 class="text-muted mb-1"><i class="bi bi-arrow-return-left text-danger"></i> Returns</h6>
+        <h4 class="fw-bold text-danger">Rs. {{ "%.0f"|format(total_returns_amount) }}</h4>
+        <small class="text-muted">{{ total_returns_count }} processed</small>
       </div>
     </div>
   </div>
+  <div class="col-md mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-3">
+        <h6 class="text-muted mb-1"><i class="bi bi-cash-coin text-success"></i> Total Receipts</h6>
+        <h4 class="fw-bold">Rs. {{ "%.0f"|format(total_receipts) }}</h4>
+        <small class="text-muted">Payments received</small>
+      </div>
+    </div>
+  </div>
+  <style>
+    .hover-shadow:hover {
+      box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+      transform: translateY(-2px);
+    }
+  </style>
 </div>
 
-<!-- Credit Cards -->
-<div class="row">
+<!-- Receivable / Payable Cards -->
+<div class="row mb-4">
   <div class="col-md-6 mb-3">
-    <div class="card text-white bg-danger">
-      <div class="card-body">
-        <h5 class="card-title">Receivables (Money Owed to Us)</h5>
-        <h3>Rs. {{ "%.2f"|format(total_receivables) }}</h3>
-        <a href="{{ url_for('analytics.receivables') }}" class="text-white"
-          >View Aging Report →</a
-        >
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-gradient"
+      style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+      <div class="card-body p-4 text-black">
+        <h5 class="card-title fw-bold"><i class="bi bi-arrow-down-left-circle me-2"></i>Receivables</h5>
+        <h3 class="fw-bold">Rs. {{ "%.0f"|format(total_receivables) }}</h3>
+        <a href="{{ url_for('analytics.receivables') }}" class="text-black-50 text-decoration-none small">View Report
+          →</a>
       </div>
     </div>
   </div>
   <div class="col-md-6 mb-3">
-    <div class="card text-white bg-secondary">
-      <div class="card-body">
-        <h5 class="card-title">Payables (Money We Owe)</h5>
-        <h3>Rs. {{ "%.2f"|format(total_payables) }}</h3>
-        <a href="{{ url_for('analytics.aging_report') }}" class="text-white"
-          >View Aging Report →</a
-        >
+    <div class="card h-100 border-0 shadow-sm rounded-4 bg-gradient"
+      style="background: linear-gradient(135deg, #6c757d 0%, #495057 100%);">
+      <div class="card-body p-4 text-black">
+        <h5 class="card-title fw-bold"><i class="bi bi-arrow-up-right-circle me-2"></i>Payables</h5>
+        <h3 class="fw-bold">Rs. {{ "%.0f"|format(total_payables) }}</h3>
+        <a href="{{ url_for('analytics.payables') }}" class="text-black-50 text-decoration-none small">View Report
+          →</a>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Charts Row -->
-<div class="row mt-4">
-  <div class="col-md-8 mb-3">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5>Monthly Sales - {{ selected_year }}</h5>
-      </div>
-      <div class="card-body">
-        <canvas id="salesChart" height="100"></canvas>
+<!-- Charts -->
+<div class="row mb-4">
+  <div class="col-lg-8 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2"></i>Monthly Sales — {{ selected_year }}</h5>
+        <canvas id="salesChart" height="90"></canvas>
       </div>
     </div>
   </div>
-  <div class="col-md-4 mb-3">
-    <div class="card h-100">
-      <div class="card-header">
-        <h5>Revenue Allocation</h5>
-      </div>
-      <div class="card-body">
-        <canvas id="profitExpenseChart"></canvas>
+  <div class="col-lg-4 mb-3">
+    <div class="card h-100 border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-pie-chart me-2"></i>Expense Breakdown</h5>
+        <canvas id="expenseChart"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Top Products -->
-<div class="row mt-4">
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h5>Top Selling Products</h5>
-      </div>
-      <div class="card-body">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Product</th>
-              <th>SKU</th>
-              <th class="text-end">Sold</th>
-              <th class="text-end">Revenue</th>
-              <th class="text-end">Profit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product in top_products %}
-            <tr>
-              <td>{{ product.name }}</td>
-              <td>{{ product.sku }}</td>
-              <td class="text-end">{{ product.total_sold }}</td>
-              <td class="text-end">Rs. {{ "%.2f"|format(product.revenue) }}</td>
-              <td class="text-end">Rs. {{ "%.2f"|format(product.profit) }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-6">
-    <div class="card">
-      <div class="card-header">
-        <h5>Top Distributors</h5>
-      </div>
-      <div class="card-body">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Distributor</th>
-              <th class="text-end">Orders</th>
-              <th class="text-end">Purchases</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for dist in top_distributors %}
-            <tr>
-              <td>{{ dist.name }}</td>
-              <td class="text-end">{{ dist.purchase_count }}</td>
-              <td class="text-end">
-                Rs. {{ "%.2f"|format(dist.total_purchases) }}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+<div class="row mb-4">
+  <div class="col-12 mb-3">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-activity me-2"></i>Profit Trend — {{ selected_year }}</h5>
+        <canvas id="profitChart" height="70"></canvas>
       </div>
     </div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('salesChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: {{ month_names|tojson }},
-        datasets: [{
-          label: 'Sales (Rs.)',
-          data: {{ monthly_sales|tojson }},
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          tension: 0.1
-        }]
-      },
-      options: {
-        responsive: true,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return 'Rs. ' + value.toLocaleString();
+<!-- Top Products & Distributors -->
+<div class="row mt-2">
+  <div class="col-md-6 mb-3">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">Top Selling Products</h5>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Product</th>
+                <th>SKU</th>
+                <th class="text-end">Sold</th>
+                <th class="text-end">Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in top_products %}
+              <tr>
+                <td class="fw-bold">{{ product.name }}</td>
+                <td class="text-muted">{{ product.sku }}</td>
+                <td class="text-end">{{ product.total_sold }}</td>
+                <td class="text-end">Rs. {{ "%.0f"|format(product.revenue) }}</td>
+              </tr>
+              {% endfor %}
+              {% if not top_products %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-3">No data</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 mb-3">
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-3">Top Distributors</h5>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Distributor</th>
+                <th class="text-end">Orders</th>
+                <th class="text-end">Purchases</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for dist in top_distributors %}
+              <tr>
+                <td class="fw-bold">{{ dist.name }}</td>
+                <td class="text-end">{{ dist.purchase_count }}</td>
+                <td class="text-end">Rs. {{ "%.0f"|format(dist.total_purchases) }}</td>
+              </tr>
+              {% endfor %}
+              {% if not top_distributors %}
+              <tr>
+                <td colspan="3" class="text-center text-muted py-3">No data</td>
+              </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <div id="analytics-data" class="d-none" data-months="{{ month_names | tojson | forceescape }}"
+      data-cash="{{ monthly_cash | tojson | forceescape }}" data-credit="{{ monthly_credit | tojson | forceescape }}"
+      data-profit="{{ monthly_profit | tojson | forceescape }}"
+      data-expenses="{{ monthly_expenses | tojson | forceescape }}"
+      data-categories="{{ expense_categories | tojson | forceescape }}"
+      data-amounts="{{ expense_amounts | tojson | forceescape }}">
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const rawData = document.getElementById('analytics-data');
+        if (!rawData) return;
+
+        // Parse data safely from the DOM
+        const monthLabels = JSON.parse(rawData.getAttribute('data-months') || '[]');
+        const cashData = JSON.parse(rawData.getAttribute('data-cash') || '[]');
+        const creditData = JSON.parse(rawData.getAttribute('data-credit') || '[]');
+        const profitData = JSON.parse(rawData.getAttribute('data-profit') || '[]');
+        const expensesData = JSON.parse(rawData.getAttribute('data-expenses') || '[]');
+        const expCats = JSON.parse(rawData.getAttribute('data-categories') || '[]');
+        const expAmts = JSON.parse(rawData.getAttribute('data-amounts') || '[]');
+
+        // 1. Monthly Sales Chart (Stacked Bar)
+        new Chart(document.getElementById('salesChart').getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: monthLabels,
+            datasets: [
+              {
+                label: 'Cash Sales',
+                data: cashData,
+                backgroundColor: 'rgba(25, 135, 84, 0.75)',
+                borderColor: 'rgb(25, 135, 84)',
+                borderWidth: 1, borderRadius: 4
+              },
+              {
+                label: 'Credit Sales',
+                data: creditData,
+                backgroundColor: 'rgba(13, 202, 240, 0.75)',
+                borderColor: 'rgb(13, 202, 240)',
+                borderWidth: 1, borderRadius: 4
               }
-            }
-          }
-        }
-      }
-    });
-
-    const cogs = {{ (total_revenue - gross_profit)|tojson }};
-    const expenses = {{ total_expenses|tojson }};
-    const profit = {{ (net_profit if net_profit > 0 else 0)|tojson }};
-
-    const ctxPie = document.getElementById('profitExpenseChart').getContext('2d');
-    new Chart(ctxPie, {
-      type: 'pie',
-      data: {
-        labels: ['Cost of Goods', 'Expenses', 'Net Profit'],
-        datasets: [{
-          data: [cogs, expenses, profit],
-          backgroundColor: [
-            'rgb(54, 162, 235)', // Blue for COGS
-            'rgb(255, 99, 132)', // Red for Expenses
-            'rgb(75, 192, 192)'  // Green for Profit
-          ],
-          hoverOffset: 4
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: 'bottom',
+            ]
           },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                let label = context.label || '';
-                if (label) {
-                  label += ': ';
-                }
-                if (context.parsed !== null) {
-                  label += 'Rs. ' + context.parsed.toLocaleString();
-                }
-                return label;
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+              x: { stacked: true, grid: { display: false } },
+              y: {
+                stacked: true, beginAtZero: true,
+                ticks: { callback: v => 'Rs. ' + v.toLocaleString() }
               }
             }
           }
+        });
+
+        // 2. Expense Breakdown (Doughnut)
+        const palette = [
+          '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+          '#FF9F40', '#C9CBCF', '#7BC8A4', '#E7549B', '#5B5EA6'
+        ];
+        if (expCats.length > 0) {
+          new Chart(document.getElementById('expenseChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+              labels: expCats,
+              datasets: [{
+                data: expAmts,
+                backgroundColor: palette.slice(0, expCats.length),
+                hoverOffset: 8, borderWidth: 2
+              }]
+            },
+            options: {
+              responsive: true,
+              cutout: '60%',
+              plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+                tooltip: {
+                  callbacks: {
+                    label: ctx => ctx.label + ': Rs. ' + ctx.parsed.toLocaleString()
+                  }
+                }
+              }
+            }
+          });
+        } else {
+          document.getElementById('expenseChart').parentElement.innerHTML +=
+            '<p class="text-center text-muted mt-3">No expense data</p>';
         }
-      }
-    });
-  });
-</script>
-{% endblock %}
+
+        // 3. Profit Trend (Line)
+        new Chart(document.getElementById('profitChart').getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: monthLabels,
+            datasets: [
+              {
+                label: 'Net Profit',
+                data: profitData,
+                borderColor: 'rgb(25, 135, 84)',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                fill: true, tension: 0.4, pointRadius: 5, pointHoverRadius: 8,
+                borderWidth: 2
+              },
+              {
+                label: 'Total Expenses',
+                data: expensesData,
+                borderColor: 'rgb(220, 53, 69)',
+                backgroundColor: 'rgba(220, 53, 69, 0.05)',
+                fill: true, tension: 0.4, pointRadius: 4, pointHoverRadius: 7,
+                borderWidth: 2, borderDash: [5, 5]
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+              x: { grid: { display: false } },
+              y: {
+                beginAtZero: true,
+                ticks: { callback: v => 'Rs. ' + v.toLocaleString() }
+              }
+            }
+          }
+        });
+      });
+    </script>
+    {% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block page_title %}Process Supplier Return{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">Return Items to Supplier</h3>
+    <a href="{{ url_for('returns.supplier_returns') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i> Back to Returns
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body">
+        <form method="POST">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Select Original Purchase Order</label>
+                    <select name="purchase_order_id" id="poSelect" class="form-select"
+                        style="pointer-events: none; background-color: #e9ecef;" required>
+                        <option value="{{ po.id }}" selected>PO #{{ po.id }} - {{ po.distributor.name }} ({{
+                            po.received_at.strftime('%Y-%m-%d') if po.received_at else
+                            po.created_at.strftime('%Y-%m-%d') }})</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Select Product to Return</label>
+                    <select name="product_id" id="productSelect" class="form-select" required disabled>
+                        <option value="">-- First Select a PO --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Quantity Returned</label>
+                    <input type="number" name="quantity" id="quantityInput" class="form-control" min="1" required
+                        disabled>
+                    <small class="text-muted" id="qtyHint">Max available to return: -</small>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Return Reason</label>
+                    <select name="reason" class="form-select" required>
+                        <option value="">-- Select Reason --</option>
+                        <option value="Defective Products">Defective Products</option>
+                        <option value="Incorrect Supply">Incorrect Supply</option>
+                        <option value="Overstock Return">Overstock Return</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Adjustment Amount (Payable reduction)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light">Rs.</span>
+                        <input type="text" id="refundAmount" class="form-control bg-light" value="0.00" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label fw-bold">Additional Notes <span class="text-muted">(Optional)</span></label>
+                <textarea name="notes" class="form-control" rows="2"
+                    placeholder="Details required for supplier..."></textarea>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Notice:</strong> This action will reduce inventory for the selected product and decrease the
+                payable amount owed to this supplier in the ledger.
+            </div>
+
+            <button type="submit" class="btn btn-secondary d-block w-100 py-2 fs-5">
+                <i class="bi bi-truck me-2"></i> Dispatch Return to Supplier
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const poItems = {{ po_items | tojson | safe }};
+    const poSelect = document.getElementById('poSelect');
+    const productSelect = document.getElementById('productSelect');
+    const quantityInput = document.getElementById('quantityInput');
+    const qtyHint = document.getElementById('qtyHint');
+    const refundAmount = document.getElementById('refundAmount');
+
+    poSelect.addEventListener('change', function () {
+        productSelect.innerHTML = '<option value="">-- Select a Product --</option>';
+        productSelect.disabled = true;
+        quantityInput.disabled = true;
+        quantityInput.value = '';
+        qtyHint.textContent = 'Max available to return: -';
+        refundAmount.value = '0.00';
+
+        const poId = this.value;
+        if (poId && poItems[poId]) {
+            poItems[poId].forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.textContent = `${item.name} (Purchased: ${item.qty} @ Rs.${item.price})`;
+                opt.dataset.maxQty = item.qty;
+                opt.dataset.price = item.price;
+                productSelect.appendChild(opt);
+            });
+            productSelect.disabled = false;
+        }
+    });
+
+    productSelect.addEventListener('change', function () {
+        if (this.value) {
+            const selectedOpt = this.options[this.selectedIndex];
+            const maxQty = selectedOpt.dataset.maxQty;
+            quantityInput.max = maxQty;
+            quantityInput.disabled = false;
+            quantityInput.value = 1;
+            qtyHint.textContent = `Max available to return: ${maxQty}`;
+            updateRefund();
+        } else {
+            quantityInput.disabled = true;
+            quantityInput.value = '';
+            qtyHint.textContent = 'Max available to return: -';
+            refundAmount.value = '0.00';
+        }
+    });
+
+    quantityInput.addEventListener('input', updateRefund);
+
+    function updateRefund() {
+        if (!productSelect.value) return;
+        const selectedOpt = productSelect.options[productSelect.selectedIndex];
+        const qty = parseInt(quantityInput.value) || 0;
+        const max = parseInt(quantityInput.max) || 0;
+
+        let validQty = qty;
+        if (qty > max) {
+            validQty = max;
+            quantityInput.value = max;
+        }
+
+        const price = parseFloat(selectedOpt.dataset.price);
+        refundAmount.value = (validQty * price).toFixed(2);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (poSelect.value) {
+            poSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block page_title %}Low Stock Products{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Low Stock Products</h3>
+        <p class="text-muted small mb-0">Items at or below minimum stock level</p>
+    </div>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="lowStockTable">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="ps-4">Product Name</th>
+                        <th>SKU</th>
+                        <th>Current Stock</th>
+                        <th>Min Stock Level</th>
+                        <th>Distributor</th>
+                        <th class="text-end pe-4">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ p.name }}</td>
+                        <td>{{ p.sku or '—' }}</td>
+                        <td>
+                            <span
+                                class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">
+                                {{ p.stock_quantity }}
+                            </span>
+                        </td>
+                        <td>{{ p.min_stock_level }}</td>
+                        <td>{{ p.distributor.name if p.distributor else '—' }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{{ url_for('products.restock_product', id=p.id) }}"
+                                class="btn btn-sm btn-success rounded-pill px-3">
+                                <i class="bi bi-plus-circle me-1"></i> Restock
+                            </a>
+                            <a href="{{ url_for('products.product_detail', id=p.id) }}"
+                                class="btn btn-sm btn-outline-primary rounded-pill px-3 ms-1">
+                                <i class="bi bi-eye me-1"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not products %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle display-4 text-success mb-3"></i>
+                <p>All products are sufficiently stocked!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

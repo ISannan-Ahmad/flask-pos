@@ -17,9 +17,11 @@ def products():
 @role_required('admin')
 def manage_products():
     if request.method == 'POST':
-        success, message = ProductController.create_product(request.form)
+        success, message, po_id = ProductController.create_product(request.form, request.files)
         if success:
             flash(message, "success")
+            if po_id:
+                return redirect(url_for('purchases.purchase_receipt', id=po_id))
         else:
             flash(message, "danger")
         return redirect(url_for('products.manage_products'))
@@ -28,7 +30,7 @@ def manage_products():
     distributors = ProductController.get_all_distributors()
     return render_template('manage_products.html', products=products, distributors=distributors)
 
-@products_bp.route('/admin/delete/<int:id>')
+@products_bp.route('/admin/delete/<int:id>', methods=['POST'])
 @login_required
 @role_required('admin')
 def delete_product(id):
@@ -49,7 +51,7 @@ def edit_product(id):
         return redirect(url_for('products.manage_products'))
     
     if request.method == 'POST':
-        success, message = ProductController.update_product(id, request.form)
+        success, message = ProductController.update_product(id, request.form, request.files)
         if success:
              flash(message, "success")
              return redirect(url_for('products.manage_products'))
@@ -84,9 +86,11 @@ def restock_product(id):
         return redirect(url_for('products.products'))
         
     if request.method == 'POST':
-        success, message, updated_product = ProductController.restock_product(id, request.form)
+        success, message, updated_product, po_id = ProductController.restock_product(id, request.form)
         if success:
              flash(message, "success")
+             if po_id:
+                 return redirect(url_for('purchases.purchase_receipt', id=po_id))
              return redirect(url_for('products.product_detail', id=id))
         else:
              flash(message, "danger" if "Please enter" in message else "warning")

@@ -1,231 +1,239 @@
 {% extends "base.html" %} {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h3>Purchase Order #{{ purchase.id }}</h3>
-  <div>
-    <a href="{{ url_for('purchases.purchase_orders') }}" class="btn btn-secondary">
-      <i class="bi bi-arrow-left"></i> Back
+  <h3 class="fw-bold mb-0">Purchase Order #{{ purchase.id }}</h3>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('purchases.purchase_orders') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back
     </a>
-    <a href="{{ url_for('purchases.purchase_receipt', id=purchase.id) }}" class="btn btn-outline-success ms-2">
-      <i class="bi bi-printer"></i> Print Receipt
+    <a href="{{ url_for('purchases.purchase_receipt', id=purchase.id) }}"
+      class="btn btn-outline-success rounded-pill px-4 shadow-sm">
+      <i class="bi bi-printer me-1"></i> Print Receipt
     </a>
     {% if purchase.status == 'pending' %}
-    <form
-      method="POST"
-      action="{{ url_for('purchases.receive_purchase_order', id=purchase.id) }}"
-      class="d-inline"
-    >
-      <button
-        type="submit"
-        class="btn btn-success"
-        onclick="return confirm('Mark as received and update stock?');"
-      >
-        <i class="bi bi-check-circle"></i> Receive Order
+    <form method="POST" action="{{ url_for('purchases.receive_purchase_order', id=purchase.id) }}" class="d-inline">
+      <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm"
+        onclick="return confirm('Mark as received and update stock?');">
+        <i class="bi bi-check-circle me-1"></i> Receive Order
       </button>
     </form>
+    {% elif purchase.status == 'received' and current_user.role == 'admin' %}
+    <a href="{{ url_for('returns.process_supplier', po_id=purchase.id) }}"
+      class="btn btn-warning rounded-pill px-4 shadow-sm">
+      <i class="bi bi-truck me-1"></i> Return Items
+    </a>
     {% endif %}
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-6">
-    <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">Order Details</h5>
+<div class="row g-4">
+  <!-- Main Content -->
+  <div class="col-lg-8">
+    <!-- Section 1: Order Information -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+        <h5 class="fw-bold text-primary mb-0"><i class="bi bi-info-circle me-2"></i>Purchase Details</h5>
       </div>
-      <div class="card-body">
-        <table class="table">
-          <tr>
-            <th>Distributor:</th>
-            <td>
-              <a
-                href="{{ url_for('distributors.distributor_detail', id=purchase.distributor.id) }}"
-              >
-                {{ purchase.distributor.name }}
-              </a>
-            </td>
-          </tr>
-          <tr>
-            <th>Status:</th>
-            <td>
+      <div class="card-body px-4 pb-4">
+        <div class="row g-3">
+          <div class="col-sm-3">
+            <div class="bg-light rounded-3 p-3 h-100">
+              <div class="text-muted small text-uppercase fw-bold mb-1">PO ID</div>
+              <div class="fs-5 fw-bold text-secondary">#{{ purchase.id }}</div>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="bg-light rounded-3 p-3 h-100">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Created At</div>
+              <div class="fw-bold">{{ purchase.created_at.strftime('%Y-%m-%d') }}</div>
+              <small class="text-muted">{{ purchase.created_at.strftime('%I:%M %p') }}</small>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="bg-light rounded-3 p-3 h-100">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Status</div>
               <span
-                class="badge {% if purchase.status == 'received' %}bg-success{% elif purchase.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}"
-              >
-                {{ purchase.status }}
+                class="badge {% if purchase.status == 'received' %}bg-success{% elif purchase.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
+                {{ purchase.status|capitalize }}
               </span>
-            </td>
-          </tr>
-          <tr>
-            <th>Payment Status:</th>
-            <td>
+            </div>
+          </div>
+          <div class="col-sm-3">
+            <div class="bg-light rounded-3 p-3 h-100">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Payment</div>
               <span
-                class="badge {% if purchase.payment_status == 'paid' %}bg-success{% elif purchase.payment_status == 'partial' %}bg-warning{% else %}bg-secondary{% endif %}"
-              >
-                {{ purchase.payment_status }}
+                class="badge {% if purchase.payment_status == 'paid' %}bg-success{% elif purchase.payment_status == 'partial' %}bg-info{% else %}bg-secondary{% endif %} rounded-pill px-3 py-2">
+                {{ purchase.payment_status|capitalize }}
               </span>
-            </td>
-          </tr>
-          <tr>
-            <th>Invoice #:</th>
-            <td>{{ purchase.invoice_number or 'N/A' }}</td>
-          </tr>
-          <tr>
-            <th>Created By:</th>
-            <td>{{ purchase.creator.username }}</td>
-          </tr>
-          <tr>
-            <th>Created At:</th>
-            <td>{{ purchase.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-          </tr>
-          {% if purchase.received_at %}
-          <tr>
-            <th>Received At:</th>
-            <td>{{ purchase.received_at.strftime('%Y-%m-%d %H:%M') }}</td>
-          </tr>
-          {% endif %}
-          <tr>
-            <th>Notes:</th>
-            <td>{{ purchase.notes or 'N/A' }}</td>
-          </tr>
-        </table>
-      </div>
-    </div>
-  </div>
+            </div>
+          </div>
+        </div>
 
-  <div class="col-md-6">
-    <div class="card mb-4">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Payment Summary</h5>
-      </div>
-      <div class="card-body">
-        <table class="table">
-          <tr>
-            <th>Total Amount:</th>
-            <td class="text-end">
-              Rs. {{ "%.2f"|format(purchase.total_amount) }}
-            </td>
-          </tr>
-          <tr>
-            <th>Amount Paid:</th>
-            <td class="text-end text-success">
-              Rs. {{ "%.2f"|format(purchase.amount_paid) }}
-            </td>
-          </tr>
-          <tr>
-            <th>Remaining:</th>
-            <td
-              class="text-end {% if purchase.remaining_amount > 0 %}text-danger{% endif %}"
-            >
-              Rs. {{ "%.2f"|format(purchase.remaining_amount) }}
-            </td>
-          </tr>
-        </table>
+        <!-- Supplier Info -->
+        <div class="mt-3 p-3 bg-light rounded-3">
+          <div class="row g-3">
+            <div class="col-sm-4">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Distributor</div>
+              <div class="fw-bold">
+                <a href="{{ url_for('distributors.distributor_detail', id=purchase.distributor.id) }}"
+                  class="text-decoration-none">
+                  {{ purchase.distributor.name }}
+                </a>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Contact</div>
+              <div>{{ purchase.distributor.contact_person or 'N/A' }}</div>
+            </div>
+            <div class="col-sm-4">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Invoice Number</div>
+              <div class="fw-bold">{{ purchase.invoice_number or 'Not Provided' }}</div>
+            </div>
+          </div>
+        </div>
 
-        {% if purchase.remaining_amount > 0 %}
-        <button
-          type="button"
-          class="btn btn-primary"
-          data-bs-toggle="modal"
-          data-bs-target="#paymentModal"
-        >
-          <i class="bi bi-cash"></i> Record Payment
-        </button>
+        <!-- Notes -->
+        {% if purchase.notes %}
+        <div class="mt-3 p-3 bg-light rounded-3">
+          <div class="text-muted small text-uppercase fw-bold mb-1">Order Notes</div>
+          <p class="mb-0 small">{{ purchase.notes }}</p>
+        </div>
         {% endif %}
       </div>
     </div>
-  </div>
-</div>
 
-<div class="card mb-4">
-  <div class="card-header bg-info text-white">
-    <h5 class="mb-0">Items</h5>
+    <!-- Section 2: Items Table -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+        <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-box me-2"></i>Ordered Items</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-4">Product</th>
+                <th class="text-center">Quantity</th>
+                <th class="text-end">Unit Cost</th>
+                <th class="text-end pe-4">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in purchase.items %}
+              <tr>
+                <td class="ps-4">
+                  <div class="fw-bold">{{ item.product.name }}</div>
+                  <small class="text-muted">{{ item.product.sku or '' }}</small>
+                </td>
+                <td class="text-center fw-bold">{{ item.quantity }}</td>
+                <td class="text-end">Rs. {{ "%.2f"|format(item.unit_cost) }}</td>
+                <td class="text-end pe-4 fw-bold">Rs. {{ "%.2f"|format(item.total_cost) }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
-  <div class="card-body">
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Unit Cost</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in purchase.items %}
-        <tr>
-          <td>{{ item.product.name }}</td>
-          <td>{{ item.quantity }}</td>
-          <td>Rs. {{ "%.2f"|format(item.unit_cost) }}</td>
-          <td>Rs. {{ "%.2f"|format(item.total_cost) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-      <tfoot>
-        <tr>
-          <th colspan="3" class="text-end">Total:</th>
-          <th>Rs. {{ "%.2f"|format(purchase.total_amount) }}</th>
-        </tr>
-      </tfoot>
-    </table>
+
+  <!-- Sidebar: Financial Summary -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-header bg-secondary text-white rounded-top-4 py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-calculator me-2"></i>Financial Summary</h5>
+      </div>
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted">Total Order Value</span>
+          <span class="fw-bold fs-5">Rs. {{ "%.2f"|format(purchase.total_amount) }}</span>
+        </div>
+
+        <div class="d-flex justify-content-between mb-3 border-top pt-3">
+          <span class="text-muted">Amount Paid To Supplier</span>
+          <span class="text-success fw-bold">Rs. {{ "%.2f"|format(purchase.amount_paid) }}</span>
+        </div>
+
+        {% if purchase.remaining_amount > 0 %}
+        <div class="d-flex justify-content-between mb-3 border-top pt-3">
+          <span class="text-danger fw-bold">Remaining Balance</span>
+          <span class="text-danger fw-bold fs-5">Rs. {{ "%.2f"|format(purchase.remaining_amount) }}</span>
+        </div>
+        {% endif %}
+
+        <hr>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Created By</span>
+          <span class="fw-bold">{{ purchase.creator.username }}</span>
+        </div>
+        {% if purchase.received_at %}
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Received At</span>
+          <span class="fw-bold">{{ purchase.received_at.strftime('%Y-%m-%d %I:%M %p') }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Record Payment Modal Trigger -->
+    {% if purchase.remaining_amount > 0 and current_user.role == 'admin' %}
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-header bg-success text-white rounded-top-4 py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-wallet2 me-2"></i>Clear Balance</h5>
+      </div>
+      <div class="card-body p-4 text-center">
+        <p class="small text-muted mb-3">Record a payment sent to the supplier to clear the outstanding balance on this
+          invoice.</p>
+        <button type="button" class="btn btn-success fw-bold rounded-pill w-100 py-2" data-bs-toggle="modal"
+          data-bs-target="#paymentModal">
+          <i class="bi bi-cash me-1"></i> Record Supplier Payment
+        </button>
+      </div>
+    </div>
+    {% endif %}
   </div>
 </div>
 
 <!-- Payment Modal -->
+{% if purchase.remaining_amount > 0 %}
 <div class="modal fade" id="paymentModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Record Payment</h5>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="modal"
-        ></button>
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-bottom-0 pb-0">
+        <h5 class="modal-title fw-bold">Record Supplier Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form
-        method="POST"
-        action="{{ url_for('purchases.add_purchase_payment', id=purchase.id) }}"
-      >
+      <form method="POST" action="{{ url_for('purchases.add_purchase_payment', id=purchase.id) }}">
         <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label"
-              >Amount (Max: Rs. {{ "%.2f"|format(purchase.remaining_amount)
-              }})</label
-            >
-            <input
-              type="number"
-              name="amount"
-              class="form-control"
-              step="0.01"
-              max="{{ purchase.remaining_amount }}"
-              min="0.01"
-              required
-            />
+          <div class="alert alert-info border-0 rounded-3 mb-4">
+            <i class="bi bi-info-circle me-1"></i> Max payable amount: <strong>Rs. {{
+              "%.2f"|format(purchase.remaining_amount) }}</strong>
           </div>
           <div class="mb-3">
-            <label class="form-label">Payment Method</label>
-            <select name="payment_method" class="form-select" required>
+            <label class="form-label fw-bold small text-uppercase text-muted">Amount Sending (Rs.)</label>
+            <input type="number" name="amount" class="form-control form-control-lg" step="0.01"
+              max="{{ purchase.remaining_amount }}" min="0.01" value="{{ purchase.remaining_amount }}" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold small text-uppercase text-muted">Payment Method</label>
+            <select name="payment_method" class="form-select form-select-lg" required>
               <option value="cash">Cash</option>
               <option value="bank_transfer">Bank Transfer</option>
               <option value="cheque">Cheque</option>
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Notes</label>
-            <textarea name="notes" class="form-control" rows="2"></textarea>
+            <label class="form-label fw-bold small text-uppercase text-muted">Internal Notes</label>
+            <textarea name="notes" class="form-control" rows="2"
+              placeholder="Cheque number, transaction ID..."></textarea>
           </div>
         </div>
-        <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            data-bs-dismiss="modal"
-          >
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-primary">Record Payment</button>
+        <div class="modal-footer border-top-0 pt-0">
+          <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success rounded-pill px-4 fw-bold">Confirm Payment</button>
         </div>
       </form>
     </div>
   </div>
 </div>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block page_title %}Supplier Return Receipt{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+    <h3 class="fw-bold mb-0">Supplier Return #{{ return_po.id }}</h3>
+    <div>
+        <a href="{{ url_for('returns.supplier_returns') }}" class="btn btn-outline-secondary me-2">
+            <i class="bi bi-arrow-left"></i> Back to Returns
+        </a>
+        <button onclick="window.print()" class="btn btn-primary">
+            <i class="bi bi-printer"></i> Print Receipt
+        </button>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4 mb-4 receipt-wrapper" style="max-width: 800px; margin: 0 auto;">
+    <div class="card-body p-5">
+        <div class="text-center mb-4 pb-3 border-bottom">
+            <h2 class="fw-bold mb-1">SUPPLIER RETURN</h2>
+            <p class="text-muted mb-0">Ref: PO #{{ return_po.id }}</p>
+            <p class="text-muted mb-0">{{ return_po.created_at.strftime('%A, %b %d, %Y - %I:%M %p') }}</p>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-sm-6">
+                <h6 class="text-muted fw-bold mb-1">RETURNED TO</h6>
+                <p class="mb-0 fw-bold fs-5">{{ return_po.distributor.name }}</p>
+                {% if return_po.distributor.phone %}<p class="mb-0 text-muted">{{ return_po.distributor.phone }}</p>{%
+                endif %}
+            </div>
+            <div class="col-sm-6 text-sm-end text-start mt-4 mt-sm-0">
+                <h6 class="text-muted fw-bold mb-1">REFERENCE</h6>
+                <p class="mb-0 fw-bold">{{ return_po.invoice_number }}</p>
+                <small class="text-muted d-block mt-1">{{ return_po.notes }}</small>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table table-borderless align-middle mb-0">
+                <thead class="border-bottom border-top text-muted bg-light">
+                    <tr>
+                        <th class="py-3 ps-3">Product Name</th>
+                        <th class="py-3 text-center">Qty Returned</th>
+                        <th class="py-3 text-end">Unit Cost</th>
+                        <th class="py-3 text-end pe-3">Credit Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in return_po.items %}
+                    <tr class="border-bottom">
+                        <td class="py-3 ps-3 fw-bold">{{ item.product.name }}</td>
+                        <td class="py-3 text-center">{{ item.quantity }}</td>
+                        <td class="py-3 text-end text-muted">Rs. {{ "%.2f"|format(item.unit_cost) }}</td>
+                        <td class="py-3 text-end pe-3 fw-bold text-success">Rs. {{ "%.2f"|format(item.total_cost|abs) }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <div class="text-end" style="min-width: 250px;">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted fw-bold">TOTAL CREDIT</span>
+                    <span class="fw-bold fs-4 text-success">Rs. {{ "%.2f"|format(return_po.total_amount|abs) }}</span>
+                </div>
+                <small class="text-muted d-block mt-2 (Payables value offset successfully)"></small>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 pt-4 border-top">
+            <p class="text-muted small mb-0 fw-bold mt-1">Dispatched/Logged by: {{ return_po.creator.full_name or
+                return_po.creator.username }}</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+
+        .receipt-wrapper,
+        .receipt-wrapper * {
+            visibility: visible;
+        }
+
+        .receipt-wrapper {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            box-shadow: none !important;
+        }
+
+        .d-print-none {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}

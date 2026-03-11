@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h3>General Ledger</h3>
+  <h3>General Ledger</h3>
 </div>
 
 <!-- Filter Form -->
@@ -12,9 +12,11 @@
       <div class="col-md-3">
         <label class="form-label">Ledger</label>
         <select name="type" class="form-select">
-          <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>All Transactions</option>
-          <option value="customer" {% if transaction_type == 'customer' %}selected{% endif %}>Customer Transactions</option>
-          <option value="supplier" {% if transaction_type == 'supplier' %}selected{% endif %}>Supplier Transactions</option>
+          <option value="all" {% if transaction_type=='all' %}selected{% endif %}>All Transactions</option>
+          <option value="customer" {% if transaction_type=='customer' %}selected{% endif %}>Customer Transactions
+          </option>
+          <option value="supplier" {% if transaction_type=='supplier' %}selected{% endif %}>Supplier Transactions
+          </option>
         </select>
       </div>
       <div class="col-md-3">
@@ -30,6 +32,15 @@
         <a href="{{ url_for('analytics.ledger') }}" class="btn btn-secondary">Clear</a>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Search Bar -->
+<div class="mb-3">
+  <div class="input-group">
+    <span class="input-group-text"><i class="bi bi-search"></i></span>
+    <input type="text" id="ledgerSearch" class="form-control"
+      placeholder="Search by account name, description, or reference...">
   </div>
 </div>
 
@@ -83,9 +94,9 @@
             <td>
               <strong>{{ t.entity }}</strong>
               {% if t.order_id %}
-                <br><small class="text-muted">Sale Order #{{ t.order_id }}</small>
+              <br><small class="text-muted">Sale Order #{{ t.order_id }}</small>
               {% elif t.purchase_order_id %}
-                <br><small class="text-muted">Purchase PO #{{ t.purchase_order_id }}</small>
+              <br><small class="text-muted">Purchase PO #{{ t.purchase_order_id }}</small>
               {% endif %}
               {% if t.reference %}<br><small>Ref: {{ t.reference }}</small>{% endif %}
               {% if t.notes %}<br><small><em>{{ t.notes }}</em></small>{% endif %}
@@ -102,13 +113,13 @@
             <td class="text-end text-danger fw-bold">
               {# Debit = we pay out: supplier payment or customer receivable #}
               {% if t.transaction_type == 'payable' %}
-                Rs. {{ "%.2f"|format(t.amount) }}
+              Rs. {{ "%.2f"|format(t.amount) }}
               {% endif %}
             </td>
             <td class="text-end text-success fw-bold">
               {# Credit = money comes in or reduces what we owe: receivable charged, payments received #}
               {% if t.transaction_type in ('receivable', 'payment') %}
-                Rs. {{ "%.2f"|format(t.amount) }}
+              Rs. {{ "%.2f"|format(t.amount) }}
               {% endif %}
             </td>
             <td class="text-end fw-bold {% if t.running_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
@@ -125,4 +136,22 @@
     </div>
   </div>
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('ledgerSearch');
+    const table = document.querySelector('.table-striped');
+    if (table && searchInput) {
+      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+      searchInput.addEventListener('keyup', function () {
+        const term = searchInput.value.toLowerCase();
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const textContent = row.textContent.toLowerCase();
+          row.style.display = textContent.includes(term) ? '' : 'none';
+        }
+      });
+    }
+  });
+</script>
 {% endblock %}

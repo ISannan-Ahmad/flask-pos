@@ -2,7 +2,8 @@
 
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+  rel="stylesheet" />
 
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h3>Create Sales Order</h3>
@@ -19,9 +20,9 @@
             <option value="credit_sale">Credit Sale</option>
           </select>
         </div>
-        
+
         <!-- Customer Select (For existing customers) -->
-        <div class="col-md-3" id="customerSelectContainer" style="display: none;">
+        <div class="col-md-3" id="customerSelectContainer">
           <label class="form-label">Registered Customer</label>
           <select name="customer_id" class="form-select" id="customerSelect">
             <option value="">-- None (Walk-in) --</option>
@@ -39,32 +40,28 @@
           <label class="form-label">Customer Phone</label>
           <input type="text" name="customer_phone" class="form-control" />
         </div>
+      </div>
 
-        <div class="col-md-3 mt-3" id="amountPaidField" style="display: none">
-          <label class="form-label">Advance Payment</label>
-          <input
-            type="number"
-            name="amount_paid"
-            class="form-control"
-            step="0.01"
-            min="0"
-            value="0"
-            {% if current_user.role != 'admin' %}readonly{% endif %}
-          />
-          {% if current_user.role != 'admin' %}
-            <small class="text-muted">Only admins can record advance payments.</small>
-          {% endif %}
+      <div class="row mb-3">
+        <div class="col-md-6 walk-in-field">
+          <label class="form-label">Customer Address</label>
+          <input type="text" name="customer_address" class="form-control" />
+        </div>
+        <div class="col-md-6 walk-in-field">
+          <label class="form-label">Customer Email <small class="text-muted">(Optional)</small></label>
+          <input type="email" name="customer_email" class="form-control" />
         </div>
       </div>
 
       <h5 class="mt-4">Order Items</h5>
       <div id="items-container">
         <div class="row mb-2 item-row">
-          <div class="col-md-6">
+          <div class="col-md-5">
             <select name="product_id[]" class="form-select product-select" required>
               <option value="">Search & Select Product</option>
               {% for product in products %}
-              <option value="{{ product.id }}" data-price="{{ product.selling_price }}" data-stock="{{ product.stock_quantity }}">
+              <option value="{{ product.id }}" data-price="{{ product.selling_price }}"
+                data-stock="{{ product.stock_quantity }}">
                 {{ product.name }} (Available: {{ product.stock_quantity }})
               </option>
               {% endfor %}
@@ -74,14 +71,17 @@
             <input type="number" name="quantity[]" class="form-control quantity" placeholder="Qty" min="1" required>
           </div>
           {% if current_user.role == 'admin' %}
-          <div class="col-md-3">
+          <div class="col-md-2">
+            <input type="number" step="0.01" name="" class="form-control price-input" placeholder="Price (Rs.)"
+              required>
+          </div>
+          <div class="col-md-2">
             <input type="text" class="form-control item-total" placeholder="Total" readonly>
           </div>
           {% else %}
-            <!-- Staff cannot see prices -->
-            <div class="col-md-3 d-flex align-items-center text-muted fst-italic">
-                Price set by Admin on Approval
-            </div>
+          <div class="col-md-4 d-flex align-items-center text-muted fst-italic">
+            Price set by Admin on Approval
+          </div>
           {% endif %}
           <div class="col-md-1">
             <button type="button" class="btn btn-danger btn-sm remove-item" style="display: none;">
@@ -90,7 +90,7 @@
           </div>
         </div>
       </div>
-      
+
       <button type="button" class="btn btn-secondary mb-3 mt-2" id="add-item">
         <i class="bi bi-plus-circle"></i> Add Item
       </button>
@@ -106,9 +106,44 @@
           </table>
         </div>
       </div>
-      {% endif %}
 
+      <!-- Admin Payment & Approval Section -->
+      <div class="card bg-light mt-3">
+        <div class="card-body">
+          <h6 class="mb-3 fw-bold">Payment & Approval Details</h6>
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <label class="form-label">Payment Method</label>
+              <select name="payment_method" class="form-select">
+                <option value="cash">Cash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="credit_card">Credit Card</option>
+              </select>
+            </div>
+            <div class="col-md-3" id="amountPaidContainer">
+              <label class="form-label">Amount Paid (Rs.)</label>
+              <input type="number" name="amount_paid" id="amountPaidInput" class="form-control" step="0.01" min="0"
+                value="0" />
+              <small class="text-muted" id="amountHint">Cash sales auto-pay full amount</small>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">CAM Number</label>
+              <input type="text" name="cam_number" class="form-control" placeholder="Optional" />
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Checked By</label>
+              <input type="text" name="checked_by" class="form-control" placeholder="Person checking the order" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary mt-3">
+        <i class="bi bi-check-circle"></i> Create & Approve Order
+      </button>
+      {% else %}
       <button class="btn btn-primary mt-2">Create Draft Order</button>
+      {% endif %}
     </form>
   </div>
 </div>
@@ -119,132 +154,175 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    const orderType = document.getElementById("orderType");
-    const amountPaidField = document.getElementById("amountPaidField");
-    const customerSelectContainer = document.getElementById("customerSelectContainer");
-    
-    // We would ideally populate customers via AJAX or template context here
-    // For this rewrite, we will keep it simple and focus on the UI state logic
+    const customersData = {{ customers_data | default ({}) | tojson | safe
+  }};
+  const orderType = document.getElementById("orderType");
+  const customerSelectContainer = document.getElementById("customerSelectContainer");
+  const customerSelect = document.getElementById("customerSelect");
 
-    function toggleFields() {
-      if (orderType.value === "credit_sale") {
-        amountPaidField.style.display = "block";
-        customerSelectContainer.style.display = "block";
-      } else {
-        amountPaidField.style.display = "none";
-        customerSelectContainer.style.display = "none";
-      }
+  // Initialize Select2 for Customer Select for searchability
+  $('#customerSelect').select2({
+    theme: 'bootstrap-5',
+    width: '100%',
+    placeholder: '-- None (Walk-in) --',
+    allowClear: true
+  });
+
+  // Auto-fill customer details when a registered customer is selected
+  $('#customerSelect').on('change', function () {
+    const cid = $(this).val();
+    if (cid && customersData[cid]) {
+      const data = customersData[cid];
+      document.querySelector('input[name="customer_name"]').value = data.name;
+      document.querySelector('input[name="customer_phone"]').value = data.phone;
+      document.querySelector('input[name="customer_address"]').value = data.address;
+      document.querySelector('input[name="customer_email"]').value = data.email;
+    }
+  });
+
+  function toggleFields() {
+    if (orderType.value === "credit_sale") {
+      customerSelect.required = true;
+    } else {
+      customerSelect.required = false;
+    }
+  }
+
+  orderType.addEventListener("change", toggleFields);
+  toggleFields();
+
+  // Dynamic Items Logic
+  const container = document.getElementById('items-container');
+  const addButton = document.getElementById('add-item');
+
+  function initSelect2(element) {
+    $(element).select2({
+      theme: 'bootstrap-5',
+      width: '100%',
+      placeholder: 'Search & Select Product'
+    });
+
+    $(element).on('change', function () {
+      const row = this.closest('.item-row');
+      updatePriceName(row);
+      updateItemTotal(row);
+    });
+  }
+
+  function updatePriceName(row) {
+    // Set the price input name attribute based on selected product
+    const select = row.querySelector('.product-select');
+    const priceInput = row.querySelector('.price-input');
+    if (priceInput && select.value) {
+      priceInput.name = 'price_' + select.value;
+    } else if (priceInput) {
+      priceInput.name = '';
+    }
+  }
+
+  function updateItemTotal(row) {
+    const qty = parseFloat(row.querySelector('.quantity').value) || 0;
+    const select = row.querySelector('.product-select');
+    const selectedOption = select.options[select.selectedIndex];
+    const priceInput = row.querySelector('.price-input');
+
+    let price = 0;
+    if (priceInput) {
+      price = parseFloat(priceInput.value) || 0;
+    } else if (selectedOption && selectedOption.dataset.price) {
+      price = parseFloat(selectedOption.dataset.price);
     }
 
-    orderType.addEventListener("change", toggleFields);
-    toggleFields();
-
-    // Dynamic Items Logic
-    const container = document.getElementById('items-container');
-    const addButton = document.getElementById('add-item');
-    
-    function initSelect2(element) {
-      $(element).select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        placeholder: 'Search & Select Product'
-      });
-      
-      $(element).on('change', function() {
-        const row = this.closest('.item-row');
-        updateItemTotal(row);
-      });
-    }
-
-    function updateItemTotal(row) {
-      const qty = parseFloat(row.querySelector('.quantity').value) || 0;
-      const select = row.querySelector('.product-select');
-      const selectedOption = select.options[select.selectedIndex];
-      
-      let price = 0;
-      if (selectedOption && selectedOption.dataset.price) {
-        price = parseFloat(selectedOption.dataset.price);
-        
-        const maxStock = parseInt(selectedOption.dataset.stock);
-        const qtyInput = row.querySelector('.quantity');
-        qtyInput.max = maxStock;
-        
-        if (qty > maxStock) {
-           qtyInput.value = maxStock;
-           const itemTotalEl = row.querySelector('.item-total');
-           if (itemTotalEl) itemTotalEl.value = (maxStock * price).toFixed(2);
-           updateTotal();
-           return;
-        }
-      }
-      
-      const itemTotalEl = row.querySelector('.item-total');
-      if (itemTotalEl) itemTotalEl.value = (qty * price).toFixed(2);
-      updateTotal();
-    }
-    
-    function updateTotal() {
-      let total = 0;
-      const totalAmountEl = document.getElementById('total-amount');
-      if (!totalAmountEl) return;
-      
-      document.querySelectorAll('.item-total').forEach(input => {
-        total += parseFloat(input.value) || 0;
-      });
-      totalAmountEl.textContent = total.toFixed(2);
-    }
-    
-    function setupRow(row) {
+    if (selectedOption && selectedOption.dataset.stock) {
+      const maxStock = parseInt(selectedOption.dataset.stock);
       const qtyInput = row.querySelector('.quantity');
-      const removeBtn = row.querySelector('.remove-item');
-      const select = row.querySelector('.product-select');
-      
-      initSelect2(select);
-      
-      qtyInput.addEventListener('input', () => updateItemTotal(row));
-      
-      removeBtn.addEventListener('click', function() {
-        if ($(select).hasClass("select2-hidden-accessible")) {
-            $(select).select2('destroy');
-        }
-        row.remove();
+      qtyInput.max = maxStock;
+
+      if (qty > maxStock) {
+        qtyInput.value = maxStock;
+        const itemTotalEl = row.querySelector('.item-total');
+        if (itemTotalEl) itemTotalEl.value = (maxStock * price).toFixed(2);
         updateTotal();
-        
-        const rows = document.querySelectorAll('.item-row');
-        rows.forEach((r, index) => {
-          r.querySelector('.remove-item').style.display = rows.length > 1 ? 'inline-block' : 'none';
-        });
-      });
-    }
-    
-    addButton.addEventListener('click', function() {
-      const firstRow = document.querySelector('.item-row');
-      
-      const firstSelect = firstRow.querySelector('.product-select');
-      if ($(firstSelect).hasClass("select2-hidden-accessible")) {
-          $(firstSelect).select2('destroy');
+        return;
       }
-      
-      const newRow = firstRow.cloneNode(true);
-      
-      initSelect2(firstSelect);
-      
-      newRow.querySelectorAll('input').forEach(input => {
-        if (input.type !== 'button') input.value = '';
-      });
-      newRow.querySelector('.product-select').value = '';
-      const itemTotal = newRow.querySelector('.item-total');
-      if (itemTotal) itemTotal.value = '';
-      
-      container.appendChild(newRow);
-      setupRow(newRow);
-      
-      document.querySelectorAll('.remove-item').forEach(btn => {
-        btn.style.display = 'inline-block';
+    }
+
+    const itemTotalEl = row.querySelector('.item-total');
+    if (itemTotalEl) itemTotalEl.value = (qty * price).toFixed(2);
+    updateTotal();
+  }
+
+  function updateTotal() {
+    let total = 0;
+    const totalAmountEl = document.getElementById('total-amount');
+    if (!totalAmountEl) return;
+
+    document.querySelectorAll('.item-total').forEach(input => {
+      total += parseFloat(input.value) || 0;
+    });
+    totalAmountEl.textContent = total.toFixed(2);
+  }
+
+  function setupRow(row) {
+    const qtyInput = row.querySelector('.quantity');
+    const removeBtn = row.querySelector('.remove-item');
+    const select = row.querySelector('.product-select');
+    const priceInput = row.querySelector('.price-input');
+
+    initSelect2(select);
+
+    qtyInput.addEventListener('input', () => updateItemTotal(row));
+    if (priceInput) {
+      priceInput.addEventListener('input', () => updateItemTotal(row));
+    }
+
+    removeBtn.addEventListener('click', function () {
+      if ($(select).hasClass("select2-hidden-accessible")) {
+        $(select).select2('destroy');
+      }
+      row.remove();
+      updateTotal();
+
+      const rows = document.querySelectorAll('.item-row');
+      rows.forEach((r, index) => {
+        r.querySelector('.remove-item').style.display = rows.length > 1 ? 'inline-block' : 'none';
       });
     });
-    
-    document.querySelectorAll('.item-row').forEach(setupRow);
+  }
+
+  addButton.addEventListener('click', function () {
+    const firstRow = document.querySelector('.item-row');
+
+    const firstSelect = firstRow.querySelector('.product-select');
+    if ($(firstSelect).hasClass("select2-hidden-accessible")) {
+      $(firstSelect).select2('destroy');
+    }
+
+    const newRow = firstRow.cloneNode(true);
+
+    initSelect2(firstSelect);
+
+    newRow.querySelectorAll('input').forEach(input => {
+      if (input.type !== 'button') input.value = '';
+    });
+    newRow.querySelector('.product-select').value = '';
+    const priceInput = newRow.querySelector('.price-input');
+    if (priceInput) {
+      priceInput.name = '';
+      priceInput.value = '';
+    }
+    const itemTotal = newRow.querySelector('.item-total');
+    if (itemTotal) itemTotal.value = '';
+
+    container.appendChild(newRow);
+    setupRow(newRow);
+
+    document.querySelectorAll('.remove-item').forEach(btn => {
+      btn.style.display = 'inline-block';
+    });
+  });
+
+  document.querySelectorAll('.item-row').forEach(setupRow);
   });
 </script>
 {% endblock %}

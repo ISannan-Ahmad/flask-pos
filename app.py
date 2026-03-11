@@ -1,6 +1,7 @@
+import os
 from flask import Flask
 from werkzeug.security import generate_password_hash
-from extensions import db, login_manager
+from extensions import db, login_manager, csrf
 from routes import register_blueprints
 from models import User, Distributor, Product
 
@@ -8,13 +9,14 @@ def create_app():
     app = Flask(__name__)
     
     # Configuration
-    app.config['SECRET_KEY'] = 'secret-key-change-in-production'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pos.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize Extensions
     db.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -41,7 +43,7 @@ def initialize_database():
                 phone='03001234567'
             )
             staff = User(
-                username='staff', 
+                username='staff',  
                 password_hash=generate_password_hash('staff123'), 
                 role='staff',
                 full_name='Staff User',
@@ -52,4 +54,4 @@ def initialize_database():
 
 if __name__ == '__main__':
     initialize_database()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=8080, debug=True)

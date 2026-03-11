@@ -10,8 +10,10 @@ purchases_bp = Blueprint('purchases', __name__)
 @login_required
 @role_required('admin')
 def purchase_orders():
-    purchases = PurchasesController.get_all_purchases()
-    return render_template('purchase_orders.html', purchases=purchases)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    purchases = PurchasesController.get_all_purchases(start_date=start_date, end_date=end_date)
+    return render_template('purchase_orders.html', purchases=purchases, start_date=start_date or '', end_date=end_date or '')
 
 @purchases_bp.route('/create', methods=['GET', 'POST'])
 @login_required

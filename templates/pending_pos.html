@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block page_title %}Pending POS Orders{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">Pending POS Orders</h3>
+    <a href="{{ url_for('sales.create_order') }}" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-plus-circle me-2"></i> Create New Order
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="fw-bold mb-0 text-primary"><i class="bi bi-clock-history me-2"></i>Awaiting Approval</h5>
+            <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">{{ orders|length }} Pending</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="rounded-start">Order ID</th>
+                        <th>Customer</th>
+                        <th>Type</th>
+                        <th>Total Amount</th>
+                        <th>Created By</th>
+                        <th>Time</th>
+                        <th class="text-end rounded-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for order in orders %}
+                    <tr>
+                        <td class="fw-bold">#{{ order.id }}</td>
+                        <td>
+                            <span class="fw-bold">{{ order.customer_name if order.customer_name else 'Walk-in' }}</span>
+                            {% if order.customer_phone %}<br><small class="text-muted">{{ order.customer_phone
+                                }}</small>{% endif %}
+                        </td>
+                        <td>
+                            {% if order.order_type == 'credit_sale' %}
+                            <span
+                                class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">Credit</span>
+                            {% else %}
+                            <span
+                                class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Cash</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-bold">Rs. {{ "%.0f"|format(order.total_amount) }}</td>
+                        <td>
+                            <span
+                                class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-2">
+                                <i class="bi bi-person me-1"></i>{{ order.creator.username }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-dark">{{ order.created_at.strftime('%Y-%m-%d') }}</span><br>
+                            <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('sales.order_detail', order_id=order.id) }}"
+                                class="btn btn-sm btn-primary rounded-pill px-3 fw-bold">
+                                Review <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if not orders %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-check-circle display-4 mb-3 text-success opacity-50"></i>
+                <h5 class="fw-bold">All Caught Up!</h5>
+                <p>There are no pending POS orders awaiting approval.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

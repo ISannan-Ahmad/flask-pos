@@ -9,12 +9,28 @@
 <div class="card shadow-sm border-0">
   <div class="card-body">
     <div class="d-flex justify-content-between mb-3">
-        <h5 class="card-title">All Purchases</h5>
-        <div class="input-group w-25">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="purchaseSearch" class="form-control" placeholder="Search purchases...">
-        </div>
+      <h5 class="card-title">All Purchases</h5>
+      <div class="input-group w-25">
+        <span class="input-group-text"><i class="bi bi-search"></i></span>
+        <input type="text" id="purchaseSearch" class="form-control" placeholder="Search purchases...">
+      </div>
     </div>
+
+    <!-- Date Filter -->
+    <form method="GET" class="row g-2 mb-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small">Start Date</label>
+        <input type="date" name="start_date" class="form-control" value="{{ start_date }}" />
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">End Date</label>
+        <input type="date" name="end_date" class="form-control" value="{{ end_date }}" />
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        <a href="{{ url_for('purchases.purchase_orders') }}" class="btn btn-secondary">Clear</a>
+      </div>
+    </form>
     <div class="table-responsive">
       <table class="table table-hover table-bordered" id="purchasesTable">
         <thead class="table-dark">
@@ -38,8 +54,7 @@
             <td>{{ po.distributor.name }}</td>
             <td>
               <span
-                class="badge {% if po.status == 'received' %}bg-success{% elif po.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}"
-              >
+                class="badge {% if po.status == 'received' %}bg-success{% elif po.status == 'cancelled' %}bg-danger{% else %}bg-warning{% endif %}">
                 {{ po.status }}
               </span>
             </td>
@@ -50,21 +65,18 @@
             </td>
             <td>
               <span
-                class="badge {% if po.payment_status == 'paid' %}bg-success{% elif po.payment_status == 'partial' %}bg-warning{% else %}bg-secondary{% endif %}"
-              >
+                class="badge {% if po.payment_status == 'paid' %}bg-success{% elif po.payment_status == 'partial' %}bg-warning{% else %}bg-secondary{% endif %}">
                 {{ po.payment_status }}
               </span>
             </td>
             <td>
               <div class="btn-group">
-                  <a
-                    href="{{ url_for('purchases.purchase_order_detail', id=po.id) }}"
-                    class="btn btn-sm btn-primary"
-                    >View</a
-                  >
-                  <a href="{{ url_for('purchases.purchase_receipt', id=po.id) }}" class="btn btn-sm btn-outline-success" title="Print Receipt">
-                      <i class="bi bi-printer"></i>
-                  </a>
+                <a href="{{ url_for('purchases.purchase_order_detail', id=po.id) }}"
+                  class="btn btn-sm btn-primary">View</a>
+                <a href="{{ url_for('purchases.purchase_receipt', id=po.id) }}" class="btn btn-sm btn-outline-success"
+                  title="Print Receipt">
+                  <i class="bi bi-printer"></i>
+                </a>
               </div>
             </td>
           </tr>
@@ -76,27 +88,27 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('purchaseSearch');
     const table = document.getElementById('purchasesTable');
-    if(table) {
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    if (table) {
+      const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
 
-        searchInput.addEventListener('keyup', function() {
-            const term = searchInput.value.toLowerCase();
-            
-            for (let i = 0; i < rows.length; i++) {
-                const row = rows[i];
-                const textContent = row.textContent.toLowerCase();
-                
-                if (textContent.includes(term)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            }
-        });
+      searchInput.addEventListener('keyup', function () {
+        const term = searchInput.value.toLowerCase();
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          const textContent = row.textContent.toLowerCase();
+
+          if (textContent.includes(term)) {
+            row.style.display = '';
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
     }
-});
+  });
 </script>
 {% endblock %}

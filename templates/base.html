@@ -1,214 +1,399 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Suzuki Auto - Point of Sale</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-      body {
-        min-height: 100vh;
-        background-color: #f8fafc;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      }
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suzuki Auto - Point of Sale</title>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      min-height: 100vh;
+      background-color: #f8fafc;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+      color: white;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Beautiful slim scrollbar */
+    .sidebar-nav {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(71, 85, 105, 0.5) transparent;
+    }
+
+    .sidebar-nav::-webkit-scrollbar {
+      width: 3px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+      background: rgba(71, 85, 105, 0.4);
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    .sidebar-nav:hover::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.7);
+    }
+
+    .sidebar-nav::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .sidebar .brand {
+      padding: 1.5rem 1rem;
+      background: #0f172a;
+      font-size: 1.4rem;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      color: white;
+      display: block;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      padding: 1rem 0;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav a {
+      padding: 0.8rem 1.5rem;
+      color: #94a3b8;
+      text-decoration: none;
+      display: block;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+
+    .sidebar-nav a:hover,
+    .sidebar-nav a.active {
+      background: #334155;
+      color: white;
+      border-left: 4px solid #3b82f6;
+    }
+
+    .sidebar-nav a i {
+      margin-right: 12px;
+      font-size: 1.1em;
+      width: 20px;
+      text-align: center;
+    }
+
+    .main-content {
+      margin-left: 260px;
+      padding: 2rem;
+      width: calc(100% - 260px);
+    }
+
+    .topbar {
+      background: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+      margin-bottom: 2rem;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn {
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Responsive behavior */
+    @media (max-width: 992px) {
       .sidebar {
-        width: 260px;
-        background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
-        color: white;
-        min-height: 100vh;
-        position: fixed;
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        z-index: 1000;
-        overflow-y: auto;
+        width: 100%;
+        height: auto;
+        position: relative;
+        min-height: auto;
+        box-shadow: none;
       }
-      .sidebar .brand {
-        padding: 1.5rem 1rem;
-        background: #0f172a;
-        font-size: 1.4rem;
-        font-weight: 700;
-        text-align: center;
-        text-decoration: none;
-        color: white;
-        display: block;
-        letter-spacing: 0.5px;
-      }
-      .sidebar-nav {
-        padding: 1.5rem 0;
-      }
-      .sidebar-nav a {
-        padding: 0.8rem 1.5rem;
-        color: #94a3b8;
-        text-decoration: none;
-        display: block;
-        transition: all 0.2s ease;
-        font-weight: 500;
-      }
-      .sidebar-nav a:hover, .sidebar-nav a.active {
-        background: #334155;
-        color: white;
-        border-left: 4px solid #3b82f6;
-      }
-      .sidebar-nav a i {
-        margin-right: 12px;
-        font-size: 1.1em;
-        width: 20px;
-        text-align: center;
-      }
+
       .main-content {
-        margin-left: 260px;
-        padding: 2rem;
-        width: calc(100% - 260px);
+        margin-left: 0;
+        width: 100%;
+        padding: 1rem;
       }
-      .topbar {
-        background: white;
-        padding: 1rem 2rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        margin-bottom: 2rem;
-        border-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .card {
-        border: none;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-      }
-      .card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
-      }
-      .btn {
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-      .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-      }
-      /* Ensure responsive behavior */
-      @media (max-width: 992px) {
-        .sidebar {
-          width: 100%;
-          height: auto;
-          position: relative;
-          min-height: auto;
-          box-shadow: none;
-        }
-        .main-content {
-          margin-left: 0;
-          width: 100%;
-          padding: 1rem;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    
-    {% if current_user.is_authenticated %}
-    <div class="d-flex flex-column flex-lg-row">
-      <!-- Sidebar -->
-      <nav class="sidebar flex-shrink-0">
-        <a href="{{ url_for('main.dashboard') }}" class="brand">
-          <i class="bi bi-car-front-fill text-primary"></i> SUZUKI AUTO
-        </a>
-        
-        <div class="sidebar-nav">
-          <div class="px-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Main</div>
-          <a href="{{ url_for('main.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
-          <a href="{{ url_for('sales.create_order') }}"><i class="bi bi-cart-plus"></i> Point of Sale</a>
-          <a href="{{ url_for('products.products') }}"><i class="bi bi-box-seam"></i> View Inventory</a>
+    }
+  </style>
+</head>
 
-          {% if current_user.role == 'admin' %}
-          <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Inventory & Partners</div>
-          <a href="{{ url_for('distributors.list_distributors') }}"><i class="bi bi-truck"></i> Distributors</a>
-          <a href="{{ url_for('purchases.purchase_orders') }}"><i class="bi bi-cart-check"></i> Purchases</a>
-          <a href="{{ url_for('customers.index') }}"><i class="bi bi-people"></i> Customers</a>
+<body>
 
-          <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Reports & Setup</div>
-          <a href="{{ url_for('sales.sales_history') }}"><i class="bi bi-receipt"></i> Sales History</a>
-          <a href="{{ url_for('analytics.stock_movements') }}"><i class="bi bi-clock-history"></i> Stock Movements</a>
-          
-          <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Finance</div>
-          <a href="{{ url_for('analytics.receivables') }}"><i class="bi bi-arrow-down-left-circle text-success"></i> Accounts Receivable</a>
-          <a href="{{ url_for('analytics.payables') }}"><i class="bi bi-arrow-up-right-circle text-danger"></i> Accounts Payable</a>
-          <a href="{{ url_for('analytics.cashbook') }}"><i class="bi bi-cash-coin"></i> Cash Book</a>
-          <a href="{{ url_for('analytics.ledger') }}"><i class="bi bi-journal-text"></i> General Ledger</a>
-          <a href="{{ url_for('expenses.list_expenses') }}"><i class="bi bi-wallet2"></i> Expenses</a>
-          <a href="{{ url_for('analytics.dashboard') }}"><i class="bi bi-graph-up"></i> Analytics</a>
-          {% endif %}
+  {% if current_user.is_authenticated %}
+  <div class="d-flex flex-column flex-lg-row">
+    <!-- Sidebar -->
+    <nav class="sidebar flex-shrink-0">
+      <a href="{{ url_for('main.dashboard') }}" class="brand">
+        <i class="bi bi-car-front-fill text-primary"></i> SUZUKI AUTO
+      </a>
+
+      <div class="sidebar-nav">
+        <div class="px-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Main</div>
+        <a href="{{ url_for('main.dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{{ url_for('sales.create_order') }}"><i class="bi bi-cart-plus"></i> Point of Sale</a>
+        <a href="{{ url_for('products.products') }}"><i class="bi bi-box-seam"></i> View Inventory</a>
+
+        {% if current_user.role == 'admin' %}
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Inventory & Partners
         </div>
-      </nav>
+        <a href="{{ url_for('distributors.list_distributors') }}"><i class="bi bi-truck"></i> Distributors</a>
+        <a href="{{ url_for('purchases.purchase_orders') }}"><i class="bi bi-cart-check"></i> Purchases</a>
+        <a href="{{ url_for('customers.index') }}"><i class="bi bi-people"></i> Customers</a>
 
-      <!-- Main Content -->
-      <div class="main-content flex-grow-1">
-        <!-- Topbar -->
-        <div class="topbar">
-          <div class="text-muted fw-bold">
-            {% block page_title %}{% endblock %}
-          </div>
-          <div class="d-flex align-items-center">
-            <div class="me-3 text-end d-none d-sm-block">
-              <div class="fw-bold text-dark">{{ current_user.full_name or current_user.username }}</div>
-              <div class="small text-muted text-uppercase tracking-wider">{{ current_user.role }}</div>
-            </div>
-            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-              <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
-          </div>
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Reports & Setup</div>
+        <a href="{{ url_for('sales.sales_history') }}"><i class="bi bi-receipt"></i> Sales History</a>
+
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Returns</div>
+        <a href="{{ url_for('returns.customer_returns') }}"><i class="bi bi-arrow-return-left text-primary"></i>
+          Customer Returns</a>
+        <a href="{{ url_for('returns.supplier_returns') }}"><i class="bi bi-arrow-return-left text-warning"></i>
+          Supplier Returns</a>
+
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Analytics</div>
+        <a href="{{ url_for('analytics.stock_movements') }}"><i class="bi bi-clock-history"></i> Stock Movements</a>
+        <a href="{{ url_for('analytics.monthly_report') }}"><i class="bi bi-file-earmark-bar-graph"></i> Monthly
+          Reports</a>
+
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Finance</div>
+        <a href="{{ url_for('analytics.receivables') }}"><i class="bi bi-arrow-down-left-circle text-success"></i>
+          Accounts Receivable</a>
+        <a href="{{ url_for('analytics.payables') }}"><i class="bi bi-arrow-up-right-circle text-danger"></i> Accounts
+          Payable</a>
+        <a href="{{ url_for('analytics.cashbook') }}"><i class="bi bi-cash-coin"></i> Cash Book</a>
+        <a href="{{ url_for('analytics.ledger') }}"><i class="bi bi-journal-text"></i> General Ledger</a>
+        <a href="{{ url_for('expenses.list_expenses') }}"><i class="bi bi-wallet2"></i> Expenses</a>
+        <a href="{{ url_for('analytics.aging_report') }}"><i class="bi bi-calendar-range"></i> Aging Report</a>
+        <a href="{{ url_for('analytics.dashboard') }}"><i class="bi bi-graph-up"></i> Analytics</a>
+
+        <div class="px-4 mt-4 mb-2 text-uppercase text-secondary small fw-bold tracking-wider">Team</div>
+        <a href="{{ url_for('staff.staff_list') }}"><i class="bi bi-person-badge"></i> Staff Management</a>
+        {% endif %}
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1">
+      <!-- Topbar -->
+      <div class="topbar">
+        <div class="text-muted fw-bold">
+          {% block page_title %}{% endblock %}
         </div>
+        <div class="d-flex align-items-center">
+          <div class="me-3 text-end d-none d-sm-block">
+            <div class="fw-bold text-dark">{{ current_user.full_name or current_user.username }}</div>
+            <div class="small text-muted text-uppercase tracking-wider">{{ current_user.role }}</div>
+          </div>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+            <i class="bi bi-box-arrow-right"></i> Logout
+          </a>
+        </div>
+      </div>
 
-        <!-- Flashes -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
-              {{ message }}
-              <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-            {% endfor %}
-          {% endif %}
-        {% endwith %}
+      <!-- Flashes -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm border-0" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
 
-        <!-- Content Block -->
-        {% block content %}{% endblock %}
+      <!-- Content Block -->
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+  {% else %}
+  <!-- Unauthenticated layout (Login page) -->
+  <div class="container mt-5 pt-5">
+    <div class="text-center mb-5">
+      <h1 class="display-3 fw-bold text-dark mb-3"><i class="bi bi-car-front-fill text-primary"></i> Suzuki Auto</h1>
+      <p class="text-secondary lead">Next-Generation Spare Parts POS</p>
+    </div>
+
+    <!-- Flashes -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="row justify-content-center">
+      <div class="col-md-5">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
       </div>
     </div>
-    {% else %}
-      <!-- Unauthenticated layout (Login page) -->
-      <div class="container mt-5 pt-5">
-        <div class="text-center mb-5">
-          <h1 class="display-3 fw-bold text-dark mb-3"><i class="bi bi-car-front-fill text-primary"></i> Suzuki Auto</h1>
-          <p class="text-secondary lead">Next-Generation Spare Parts POS</p>
-        </div>
-        
-        <!-- Flashes -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="row justify-content-center">
-              <div class="col-md-5">
-                {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show border-0 shadow-sm" role="alert">
-                  {{ message }}
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-              </div>
-            </div>
-          {% endif %}
-        {% endwith %}
-
-        {% block unauth_content %}
-          <!-- Generic Fallback -->
-          {% block unauthenticated_fallback %}{% endblock %}
-        {% endblock %}
-      </div>
     {% endif %}
+    {% endwith %}
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+    {% block unauth_content %}
+    <!-- Generic Fallback -->
+    {% block unauthenticated_fallback %}{% endblock %}
+    {% endblock %}
+  </div>
+  {% endif %}
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Auto-inject CSRF token into all POST forms
+    document.addEventListener('DOMContentLoaded', function () {
+      var token = document.querySelector('meta[name="csrf-token"]');
+      if (token) {
+        document.querySelectorAll('form[method="POST"], form[method="post"]').forEach(function (form) {
+          if (!form.querySelector('input[name="csrf_token"]')) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrf_token';
+            input.value = token.getAttribute('content');
+            form.appendChild(input);
+          }
+        });
+      }
+    });
+  </script>
+
+  <!-- Global Image Viewer Modal/Overlay -->
+  <div id="globalImageViewerModal"
+    style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100%; height:100%; background-color:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
+    <span
+      style="position:absolute; top:20px; right:40px; color:#f1f1f1; font-size:40px; font-weight:bold; cursor:pointer;"
+      onclick="closeGlobalImageViewer()">&times;</span>
+    <img id="globalViewerImage"
+      style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 4px 8px rgba(0,0,0,0.5);" />
+  </div>
+  <script>
+    function showImageViewer(imgSrc) {
+      document.getElementById('globalImageViewerModal').style.display = 'flex';
+      document.getElementById('globalViewerImage').src = imgSrc;
+    }
+    function closeGlobalImageViewer() {
+      document.getElementById('globalImageViewerModal').style.display = 'none';
+    }
+
+    // Close on outside click
+    document.getElementById('globalImageViewerModal').addEventListener('click', function (e) {
+      if (e.target === this) {
+        closeGlobalImageViewer();
+      }
+    });
+
+    // Close on escape key
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && document.getElementById('globalImageViewerModal').style.display === 'flex') {
+        closeGlobalImageViewer();
+      }
+    });
+  </script>
+
+  {% if current_user.is_authenticated and current_user.role == 'admin' %}
+  <!-- Global Admin Notification Toast -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3 mb-5 mt-5" style="z-index: 1055;">
+    <div id="newOrderToast" class="toast align-items-center text-white bg-primary border-0 shadow-lg" role="alert"
+      aria-live="assertive" aria-atomic="true">
+      <div class="d-flex p-1">
+        <div class="toast-body d-flex flex-column gap-2">
+          <div class="d-flex align-items-center fw-bold fs-6">
+            <i class="bi bi-bell-fill me-2 fs-5"></i> New Pending Order
+          </div>
+          <div class="small">A staff member just submitted a new POS order awaiting your approval!</div>
+          <div class="mt-2">
+            <a href="{{ url_for('main.pending_pos') }}"
+              class="btn btn-light btn-sm text-primary fw-bold rounded-pill px-3">Review Now</a>
+          </div>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      let lastCheckTime = new Date().toISOString();
+
+      // Initialize only if toast exists
+      let toastEl = document.getElementById('newOrderToast');
+      let adminToast = toastEl ? new bootstrap.Toast(toastEl, { delay: 15000 }) : null;
+
+      // Global polling - run on all pages for admins
+      setInterval(() => {
+        fetch(`/api/check-new-orders?last_check=${encodeURIComponent(lastCheckTime)}`, {
+          credentials: 'same-origin'
+        })
+          .then(response => {
+            if (!response.ok) throw new Error("Unauthorized or Network Error");
+            return response.json();
+          })
+          .then(data => {
+            if (data.new_count > 0) {
+              // Only update dashboard UI counter if we are actually on the dashboard
+              let counterEl = document.querySelector('.bi-cart');
+              if (counterEl && counterEl.parentElement.nextElementSibling) {
+                let textEl = counterEl.parentElement.nextElementSibling.querySelector('h4');
+                if (textEl) {
+                  let currentCount = parseInt(textEl.innerText) || 0;
+                  textEl.innerText = currentCount + data.new_count;
+                  textEl.classList.add('text-primary');
+                  setTimeout(() => textEl.classList.remove('text-primary'), 1000);
+                }
+              }
+
+              // Show global toast notification on any page
+              if (adminToast) {
+                adminToast.show();
+              }
+            }
+            // Update last check time
+            if (data.timestamp) {
+              lastCheckTime = data.timestamp;
+            }
+          })
+          .catch(err => console.error("Error polling for new orders", err));
+      }, 5000);
+    });
+  </script>
+  {% endif %}
+</body>
+
 </html>

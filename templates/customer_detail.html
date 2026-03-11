@@ -3,133 +3,278 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h2>Customer: {{ customer.name }}</h2>
-        <p class="text-muted mb-0"><i class="bi bi-telephone"></i> {{ customer.phone or 'No phone' }} | <i class="bi bi-geo-alt"></i> {{ customer.address or 'No address' }}</p>
+        <h2 class="fw-bold mb-0">{{ customer.name }}</h2>
+        <p class="text-muted mb-0">Customer Profile</p>
     </div>
-    <div>
-        <h4 class="text-end mb-0">Balance Due: <span class="{% if customer.balance > 0 %}text-danger{% else %}text-success{% endif %}">Rs. {{ "%.2f"|format(customer.balance) }}</span></h4>
-        <small class="text-muted float-end">Credit Limit: Rs. {{ "%.2f"|format(customer.credit_limit) }}</small>
-    </div>
+    <a href="{{ url_for('customers.index') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Customers
+    </a>
 </div>
 
-<div class="row">
-    <!-- Payment Form -->
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="card-title mb-0">Receive Account Payment</h5>
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-circle me-2"></i>Details</h5>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Phone</div>
+                    <div>{{ customer.phone or 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Email</div>
+                    <div>{{ customer.email or 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Address</div>
+                    <div>{{ customer.address or 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Credit Limit</div>
+                    <div>Rs. {{ "%.2f"|format(customer.credit_limit or 0) }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Credit Terms</div>
+                    <div>{{ customer.credit_days }} days</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Member Since</div>
+                    <div>{{ customer.created_at.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Current Balance</div>
+                    <div class="fs-3 fw-bold {% if customer.balance > 0 %}text-danger{% else %}text-success{% endif %}">
+                        Rs. {{ "%.2f"|format(customer.balance) }}
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <form action="{{ url_for('customers.account_payment', customer_id=customer.id) }}" method="POST">
-                    <div class="mb-3">
-                        <label>Payment Amount (Rs.)</label>
-                        <input type="number" name="amount" step="0.01" min="0.01" class="form-control" required>
+        </div>
+    </div>
+
+    <!-- Analytics & Payment -->
+    <div class="col-md-8">
+        <!-- Quick Stats -->
+        {% if analytics %}
+        <div class="row g-3 mb-4">
+            <div class="col-sm-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-primary bg-opacity-10">
+                    <div class="card-body text-center p-3">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Total Purchases</div>
+                        <div class="fs-4 fw-bold text-primary">Rs. {{ "%.0f"|format(analytics.total_purchases) }}</div>
                     </div>
-                    <div class="mb-3">
-                        <label>Payment Method</label>
-                        <select name="payment_method" class="form-select">
-                            <option value="cash">Cash</option>
-                            <option value="bank_transfer">Bank Transfer</option>
-                            <option value="cheque">Cheque</option>
-                        </select>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-success bg-opacity-10">
+                    <div class="card-body text-center p-3">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Total Orders</div>
+                        <div class="fs-4 fw-bold text-success">{{ analytics.total_orders }}</div>
                     </div>
-                    <div class="mb-3">
-                        <label>Notes</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Cleared old invoices"></textarea>
+                </div>
+            </div>
+            <div class="col-sm-4">
+                <div class="card border-0 shadow-sm rounded-4 bg-warning bg-opacity-10">
+                    <div class="card-body text-center p-3">
+                        <div class="text-muted small text-uppercase fw-bold mb-1">Avg Order Value</div>
+                        <div class="fs-4 fw-bold text-warning">
+                            Rs. {{ "%.0f"|format(analytics.total_purchases / analytics.total_orders if
+                            analytics.total_orders > 0 else 0) }}
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-success w-100" {% if customer.balance <= 0 %}disabled{% endif %}>
-                        Apply Payment (FIFO)
-                    </button>
-                    {% if customer.balance <= 0 %}
-                    <small class="text-success d-block text-center mt-2">Customer balance is clear.</small>
-                    {% else %}
-                    <small class="text-muted d-block text-center mt-2">Will auto-pay oldest unpaid invoices first.</small>
-                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Yearly Purchases</h6>
+                        <canvas id="yearlyChart" style="max-height: 200px;"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <h6 class="fw-bold mb-3">Top Products</h6>
+                        <canvas id="productChart" style="max-height: 200px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Payment Form -->
+        {% if customer.balance > 0 %}
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-success mb-3"><i class="bi bi-cash me-2"></i>Record Payment</h5>
+                <form method="POST" action="{{ url_for('customers.account_payment', customer_id=customer.id) }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Amount (Rs.)</label>
+                            <input type="number" name="amount" class="form-control bg-light fw-bold text-success"
+                                step="0.01" min="0.01" max="{{ customer.balance }}" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Method</label>
+                            <select name="payment_method" class="form-select" required>
+                                <option value="cash">Cash</option>
+                                <option value="bank_transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Notes</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Optional notes..." />
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold text-primary">Payment Destination</label>
+                            <div class="d-flex gap-4 mt-2 p-2 bg-light rounded-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_destination"
+                                        id="destBusiness" value="business" checked
+                                        onchange="toggleSupplierSelect(this.value)">
+                                    <label class="form-check-label fw-bold" for="destBusiness">
+                                        Business
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="payment_destination"
+                                        id="destSupplier" value="supplier" onchange="toggleSupplierSelect(this.value)">
+                                    <label class="form-check-label fw-bold text-danger" for="destSupplier">
+                                        Pay to Supplier
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4" id="supplierSelectContainer" style="display: none;">
+                            <label class="form-label fw-bold text-danger">Select Supplier</label>
+                            <select name="supplier_id" id="supplierSelect" class="form-select">
+                                <option value="">-- Choose Supplier --</option>
+                                {% for dist in distributors %}
+                                <option value="{{ dist.id }}">{{ dist.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100 rounded-pill shadow-sm py-2 fw-bold"><i
+                                    class="bi bi-check-circle me-1"></i> Confirm Pay</button>
+                        </div>
+                    </div>
+
+                    <script>
+                        function toggleSupplierSelect(dest) {
+                            const container = document.getElementById('supplierSelectContainer');
+                            const select = document.getElementById('supplierSelect');
+                            if (dest === 'supplier') {
+                                container.style.display = 'block';
+                                select.setAttribute('required', 'required');
+                            } else {
+                                container.style.display = 'none';
+                                select.removeAttribute('required');
+                            }
+                        }
+                    </script>
                 </form>
             </div>
         </div>
-    </div>
+        {% endif %}
 
-    <!-- Transaction History -->
-    <div class="col-md-8">
-        <ul class="nav nav-tabs" id="customerTabs">
-            <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#orders">Orders</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#transactions">Account Ledger</a>
-            </li>
-        </ul>
-
-        <div class="tab-content pt-3">
-            <!-- Orders Tab -->
-            <div class="tab-pane fade show active" id="orders">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Order ID</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Total</th>
-                            <th>Paid</th>
-                            <th>Due</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in customer.orders|sort(attribute='created_at', reverse=True) %}
-                        <tr>
-                            <td>#{{ order.id }}</td>
-                            <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
-                            <td>
-                                {% if order.status == 'approved' %}
-                                    <span class="badge bg-success">Approved</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">Draft</span>
-                                {% endif %}
-                            </td>
-                            <td>Rs. {{ "%.2f"|format(order.total_amount) }}</td>
-                            <td>Rs. {{ "%.2f"|format(order.amount_paid) }}</td>
-                            <td class="text-danger">Rs. {{ "%.2f"|format(order.remaining_amount) }}</td>
-                            <td>
-                                <a href="{{ url_for('sales.order_detail', order_id=order.id) }}" class="btn btn-sm btn-outline-secondary">View</a>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="7" class="text-center text-muted">No orders found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Ledger Tab -->
-            <div class="tab-pane fade" id="transactions">
-                <table class="table table-striped align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Date</th>
-                            <th>Reference</th>
-                            <th>Method</th>
-                            <th class="text-danger">Debt (+)</th>
-                            <th class="text-success">Payment (-)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for tx in customer.transactions|sort(attribute='created_at', reverse=True) %}
-                        <tr>
-                            <td>{{ tx.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td>{{ tx.reference }} <br><small class="text-muted">{{ tx.notes or '' }}</small></td>
-                            <td>{{ tx.payment_method or '-' }}</td>
-                            <td class="text-danger fw-bold">{% if tx.transaction_type == 'receivable' %}Rs. {{ "%.2f"|format(tx.amount) }}{% endif %}</td>
-                            <td class="text-success fw-bold">{% if tx.transaction_type == 'payment' %}Rs. {{ "%.2f"|format(tx.amount) }}{% endif %}</td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="5" class="text-center text-muted">No transactions found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        <!-- Recent Transaction History -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Transaction History</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in customer.transactions|sort(attribute='created_at', reverse=True) %}
+                            <tr>
+                                <td>{{ txn.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    {% if txn.transaction_type == 'receivable' %}
+                                    <span class="badge bg-danger rounded-pill">Receivable</span>
+                                    {% else %}
+                                    <span class="badge bg-success rounded-pill">Payment</span>
+                                    {% endif %}
+                                </td>
+                                <td
+                                    class="fw-bold {% if txn.transaction_type == 'payment' %}text-success{% else %}text-danger{% endif %}">
+                                    Rs. {{ "%.2f"|format(txn.amount) }}
+                                </td>
+                                <td class="text-muted small">{{ txn.reference or '—' }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">No transactions yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+{% if analytics and (analytics.yearly|length > 0 or analytics.products|length > 0) %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    {% if analytics.yearly | length > 0 %}
+    new Chart(document.getElementById('yearlyChart'), {
+        type: 'bar',
+        data: {
+            labels: {{ analytics.yearly | map(attribute = 'year') | list | tojson | safe }},
+        datasets: [{
+            label: 'Purchase Total (Rs.)',
+            data: {{ analytics.yearly | map(attribute = 'total') | list | tojson | safe }},
+        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+        borderRadius: 8,
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+    {% endif %}
+
+    {% if analytics.products | length > 0 %}
+    new Chart(document.getElementById('productChart'), {
+        type: 'pie',
+        data: {
+            labels: {{ analytics.products | map(attribute = 'name') | list | tojson | safe }},
+        datasets: [{
+            data: {{ analytics.products | map(attribute = 'total') | list | tojson | safe }},
+        backgroundColor: [
+            'rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)',
+            'rgba(245, 158, 11, 0.8)', 'rgba(239, 68, 68, 0.8)',
+            'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)',
+            'rgba(6, 182, 212, 0.8)', 'rgba(34, 197, 94, 0.8)',
+            'rgba(251, 146, 60, 0.8)', 'rgba(168, 85, 247, 0.8)'
+        ]
+        }]
+    },
+        options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+    }
+});
+    {% endif %}
+</script>
+{% endif %}
 {% endblock %}

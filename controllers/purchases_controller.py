@@ -1,12 +1,18 @@
-from models import PurchaseOrder, Distributor, Product, PurchaseOrderItem, SupplierTransaction, StockMovement, CashTransaction
+from models import PurchaseOrder, Distributor, Product, PurchaseOrderItem, SupplierTransaction, StockMovement, CashTransaction, PKT
 from extensions import db
 from datetime import datetime
 from flask_login import current_user
 
 class PurchasesController:
     @staticmethod
-    def get_all_purchases():
-        return PurchaseOrder.query.order_by(PurchaseOrder.created_at.desc()).all()
+    def get_all_purchases(start_date=None, end_date=None):
+        query = PurchaseOrder.query
+        if start_date:
+            query = query.filter(PurchaseOrder.created_at >= datetime.strptime(start_date, '%Y-%m-%d'))
+        if end_date:
+            from datetime import timedelta
+            query = query.filter(PurchaseOrder.created_at <= datetime.strptime(end_date, '%Y-%m-%d') + timedelta(days=1))
+        return query.order_by(PurchaseOrder.created_at.desc()).all()
 
     @staticmethod
     def create_purchase_order(data, current_user_id):
@@ -105,7 +111,7 @@ class PurchasesController:
                 db.session.add(stock_movement)
         
         purchase.status = 'received'
-        purchase.received_at = datetime.utcnow()
+        purchase.received_at = datetime.now(PKT)
         
         if purchase.amount_paid > 0:
             purchase.payment_status = 'partial' if purchase.remaining_amount > 0 else 'paid'

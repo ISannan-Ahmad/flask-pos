@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block page_title %}Returns Management{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">Returns Management</h3>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('returns.defective_products') }}" class="btn btn-outline-danger rounded-pill px-4">
+            <i class="bi bi-exclamation-triangle me-2"></i> Defective Items
+        </a>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                        <i class="bi bi-cart-x fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">Customer Return</h4>
+                        <p class="text-muted small mb-0">Process returns from retail clients</p>
+                    </div>
+                </div>
+                <!-- Search Order Form -->
+                <form action="{{ url_for('returns.search_order') }}" method="GET" class="mt-4">
+                    <div class="input-group">
+                        <input type="number" name="order_id" class="form-control" placeholder="Enter Order # ID"
+                            required min="1">
+                        <button class="btn btn-primary" type="submit"><i class="bi bi-search me-1"></i> Search
+                            Order</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle p-3 me-3">
+                        <i class="bi bi-truck fs-3"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">Supplier Return</h4>
+                        <p class="text-muted small mb-0">Return goods to distributor</p>
+                    </div>
+                </div>
+                <!-- Search PO Form -->
+                <form action="{{ url_for('returns.search_po') }}" method="GET" class="mt-4">
+                    <div class="input-group">
+                        <input type="number" name="po_id" class="form-control" placeholder="Enter Purchase Order # ID"
+                            required min="1">
+                        <button class="btn btn-secondary" type="submit"><i class="bi bi-search me-1"></i> Search
+                            PO</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Customer Returns -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <h5 class="fw-bold text-primary mb-0"><i class="bi bi-person-badge me-2"></i>Recent Customer Returns
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Date</th>
+                                <th>Customer</th>
+                                <th class="text-end">Refund Amount</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for return_order in customer_returns[:15] %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ return_order.created_at.strftime('%Y-%m-%d') }}</div>
+                                    <small class="text-muted">{{ return_order.created_at.strftime('%I:%M %p') }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ return_order.customer_name or 'Walk-in' }}</div>
+                                    <small class="text-muted text-truncate d-inline-block" style="max-width: 150px;"
+                                        title="{{ return_order.cam_number }}">{{ return_order.cam_number }}</small>
+                                </td>
+                                <td class="text-end text-danger fw-bold">
+                                    Rs. {{ "%.2f"|format(return_order.total_amount|abs) }}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('returns.receipt', type='customer', r_id=return_order.id) }}"
+                                        class="btn btn-sm btn-outline-primary rounded-pill">
+                                        <i class="bi bi-receipt"></i> Receipt
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    No customer returns found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supplier Returns -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0 rounded-4 h-100">
+            <div class="card-header bg-white border-bottom-0 py-3">
+                <h5 class="fw-bold text-secondary mb-0"><i class="bi bi-building me-2"></i>Recent Supplier Returns</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Date</th>
+                                <th>Supplier</th>
+                                <th class="text-end">Return Value</th>
+                                <th class="text-end pe-4">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for return_po in supplier_returns[:15] %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ return_po.created_at.strftime('%Y-%m-%d') }}</div>
+                                    <small class="text-muted">{{ return_po.created_at.strftime('%I:%M %p') }}</small>
+                                </td>
+                                <td>
+                                    <div class="fw-bold">{{ return_po.distributor.name }}</div>
+                                </td>
+                                <td class="text-end text-success fw-bold">
+                                    Rs. {{ "%.2f"|format(return_po.total_amount|abs) }}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ url_for('returns.receipt', type='supplier', r_id=return_po.id) }}"
+                                        class="btn btn-sm btn-outline-secondary rounded-pill">
+                                        <i class="bi bi-receipt"></i> Receipt
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    No supplier returns found.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

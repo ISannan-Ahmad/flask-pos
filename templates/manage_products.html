@@ -14,51 +14,51 @@
     <h5 class="fw-bold text-primary mb-0"><i class="bi bi-plus-circle me-2"></i> Add New Product</h5>
   </div>
   <div class="card-body p-4">
-    <form method="POST">
+    <form method="POST" enctype="multipart/form-data">
       <div class="row">
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Product Name *</label>
           <input name="name" class="form-control" required />
         </div>
-        <div class="col-md-6 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">SKU (Optional)</label>
-          <input
-            name="sku"
-            class="form-control"
-            placeholder="Auto-generated if blank"
-          />
+          <input name="sku" class="form-control" placeholder="Auto-generated if blank" />
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Brand</label>
+          <input name="brand" class="form-control" placeholder="e.g. Bosch, NGK, Denso" />
         </div>
       </div>
 
       <div class="row">
-        <div class="col-md-12 mb-3">
+        <div class="col-md-4 mb-3">
           <label class="form-label">Description</label>
           <textarea name="description" class="form-control" rows="2"></textarea>
         </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Target Vehicle</label>
+          <input name="target_vehicle" class="form-control" placeholder="e.g. Toyota Corolla 2015" />
+        </div>
+        <div class="col-md-4 mb-3">
+          <label class="form-label">Unit Configuration <small class="text-muted">(Optional)</small></label>
+          <div class="input-group">
+            <input type="text" name="unit_type" class="form-control" placeholder="Unit (e.g. Box)">
+            <span class="input-group-text">Qty</span>
+            <input type="number" name="qty_per_unit" class="form-control" placeholder="e.g. 24" min="1">
+          </div>
+        </div>
       </div>
 
       <div class="row">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <label class="form-label">Stock Quantity *</label>
-          <input
-            name="stock"
-            type="number"
-            min="0"
-            class="form-control"
-            required
-          />
+          <input name="stock" type="number" min="0" class="form-control" required />
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <label class="form-label">Min Stock Level</label>
-          <input
-            name="min_stock"
-            type="number"
-            min="0"
-            class="form-control"
-            value="5"
-          />
+          <input name="min_stock" type="number" min="0" class="form-control" value="5" />
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <label class="form-label">Distributor</label>
           <select name="distributor_id" class="form-select" id="distributorSelect">
             <option value="">Search & Select</option>
@@ -67,34 +67,49 @@
             {% endfor %}
           </select>
         </div>
-      </div>
-
-      <div class="row">
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
           <label class="form-label">Part Number</label>
           <input name="part_number" class="form-control" />
         </div>
-        <div class="col-md-4 mb-3">
-          <label class="form-label">Cost Price (Rs.) *</label>
-          <input
-            name="cost"
-            type="number"
-            step="0.01"
-            min="0"
-            class="form-control"
-            required
-          />
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Purchase Price (Rs.) *</label>
+          <input name="purchase_price" type="number" step="0.01" min="0" class="form-control" id="purchasePrice"
+            required />
+          <small class="text-muted">Price paid to distributor</small>
         </div>
-        <div class="col-md-4 mb-3">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Additional Expenses (Rs.)</label>
+          <input name="additional_expenses" type="number" step="0.01" min="0" class="form-control"
+            id="additionalExpenses" value="0" />
+          <small class="text-muted">Transport, duty, handling</small>
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Cost Price (Rs.)</label>
+          <input type="number" step="0.01" class="form-control bg-light" id="costPriceDisplay" readonly />
+          <small class="text-muted">Auto: Purchase + Expenses</small>
+        </div>
+        <div class="col-md-3 mb-3">
           <label class="form-label">Selling Price (Rs.) *</label>
-          <input
-            name="sell"
-            type="number"
-            step="0.01"
-            min="0"
-            class="form-control"
-            required
-          />
+          <input name="sell" type="number" step="0.01" min="0" class="form-control" required />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-3 mb-3">
+          <label class="form-label">CAM Number</label>
+          <input name="cam_number" class="form-control" placeholder="Optional" />
+        </div>
+        <div class="col-md-3 mb-3">
+          <label class="form-label">Checked By</label>
+          <input name="checked_by" class="form-control" placeholder="Optional" />
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Product Image</label>
+          <input type="file" name="image" class="form-control" accept="image/*" />
+          <small class="text-muted">Optional. Used for product displays.</small>
         </div>
       </div>
 
@@ -116,11 +131,13 @@
       <table class="table table-hover align-middle mb-0">
         <thead class="bg-light text-muted small text-uppercase tracking-wider">
           <tr>
-            <th class="ps-4 border-0">SKU Code</th>
+            <th class="ps-4 border-0">SKU</th>
             <th class="border-0">Item Name</th>
+            <th class="border-0">Brand</th>
+            <th class="border-0">Vehicle</th>
             <th class="border-0">Availability</th>
             <th class="border-0">Financials</th>
-            <th class="pe-4 text-end border-0">Admin Actions</th>
+            <th class="pe-4 text-end border-0">Actions</th>
           </tr>
         </thead>
         <tbody class="border-top-0">
@@ -129,42 +146,44 @@
             <td class="fw-bold text-muted ps-4">{{ p.sku or p.id }}</td>
             <td>
               <div class="fw-bold text-dark">{{ p.name }}</div>
-              <small class="text-muted">Distributor: {{ p.distributor.name if p.distributor else 'N/A' }}</small>
-            </td>
-            <td>
-              {% if p.stock_quantity <= p.min_stock_level %}
-              <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">Stock: {{ p.stock_quantity }}</span>
-              {% else %} 
-              <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Stock: {{ p.stock_quantity }}</span>
+              {% if p.unit_info %}
+              <small class="badge bg-secondary mb-1">{{ p.unit_info.type }} (Qty: {{ p.unit_info.qty }})</small>
               {% endif %}
+              <br>
+              <small class="text-muted">{{ p.distributor.name if p.distributor else 'N/A' }}</small>
+            </td>
+            <td>{{ p.brand or '—' }}</td>
+            <td>{{ p.target_vehicle or '—' }}</td>
+            <td>
+              {% if p.stock_quantity <= p.min_stock_level %} <span
+                class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-2">
+                Stock: {{ p.stock_quantity }}
+                </span>
+                {% else %}
+                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">
+                  Stock: {{ p.stock_quantity }}
+                </span>
+                {% endif %}
             </td>
             <td>
-              <div class="small">Cost: Rs. {{ "%.2f"|format(p.cost_price) }}</div>
+              <div class="small">Cost: Rs. {{ "%.2f"|format(p.cost_price or 0) }}</div>
               <div class="small fw-bold">Sell: Rs. {{ "%.2f"|format(p.selling_price) }}</div>
             </td>
             <td class="pe-4 text-end">
-              <a
-                href="{{ url_for('products.product_detail', id=p.id) }}"
-                class="btn btn-light btn-sm rounded-circle shadow-sm"
-                title="View Details"
-              >
+              <a href="{{ url_for('products.product_detail', id=p.id) }}"
+                class="btn btn-light btn-sm rounded-circle shadow-sm" title="View Details">
                 <i class="bi bi-eye text-primary"></i>
               </a>
-              <a
-                href="{{ url_for('products.edit_product', id=p.id) }}"
-                class="btn btn-light btn-sm rounded-circle shadow-sm ms-1"
-                title="Edit Product"
-              >
+              <a href="{{ url_for('products.edit_product', id=p.id) }}"
+                class="btn btn-light btn-sm rounded-circle shadow-sm ms-1" title="Edit Product">
                 <i class="bi bi-pencil text-warning"></i>
               </a>
-              <a
-                href="{{ url_for('products.delete_product', id=p.id) }}"
-                class="btn btn-light btn-sm rounded-circle shadow-sm ms-1"
-                title="Delete Product"
-                onclick="return confirm('WARNING: Are you sure you want to delete this product?');"
-              >
-                <i class="bi bi-trash text-danger"></i>
-              </a>
+              <form method="POST" action="{{ url_for('products.delete_product', id=p.id) }}" class="d-inline"
+                onsubmit="return confirm('WARNING: Are you sure you want to delete this product?');">
+                <button type="submit" class="btn btn-light btn-sm rounded-circle shadow-sm ms-1" title="Delete Product">
+                  <i class="bi bi-trash text-danger"></i>
+                </button>
+              </form>
             </td>
           </tr>
           {% endfor %}
@@ -181,19 +200,29 @@
 
 <!-- Select2 CSS -->
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css"
+  rel="stylesheet" />
 
 <!-- jQuery and Select2 JS -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
 <script>
-$(document).ready(function() {
+  $(document).ready(function () {
     $('#distributorSelect').select2({
-        theme: 'bootstrap-5',
-        width: '100%',
-        placeholder: 'Search & Select'
+      theme: 'bootstrap-5',
+      width: '100%',
+      placeholder: 'Search & Select'
     });
-});
+  });
+
+  // Auto-calculate cost price
+  function updateCostPrice() {
+    const pp = parseFloat(document.getElementById('purchasePrice').value) || 0;
+    const ae = parseFloat(document.getElementById('additionalExpenses').value) || 0;
+    document.getElementById('costPriceDisplay').value = (pp + ae).toFixed(2);
+  }
+  document.getElementById('purchasePrice').addEventListener('input', updateCostPrice);
+  document.getElementById('additionalExpenses').addEventListener('input', updateCostPrice);
 </script>
 {% endblock %}

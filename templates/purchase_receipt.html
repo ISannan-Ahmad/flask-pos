@@ -1,4 +1,4 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
 {% block page_title %}Purchase Receipt - PO #{{ purchase.id }}{% endblock %}
 
@@ -16,10 +16,10 @@
 </div>
 
 <div class="row justify-content-center">
-  <div class="col-lg-8">
+  <div class="col-lg-10">
     <div class="card border-0 shadow-lg rounded-4" id="receipt">
       <div class="card-body p-5">
-        
+
         <!-- Receipt Header / Branding -->
         <div class="text-center mb-5">
           <div class="display-5 text-primary mb-2">
@@ -31,7 +31,7 @@
           <br>
           <h4 class="fw-bold bg-light d-inline-block px-4 py-2 rounded">PURCHASE VOUCHER</h4>
         </div>
-        
+
         <div class="row mb-5 border-bottom pb-4">
           <div class="col-sm-6">
             <h6 class="text-uppercase text-muted fw-bold small mb-3">Distributor:</h6>
@@ -44,10 +44,17 @@
             <div class="fw-bold">PO #{{ purchase.id }}</div>
             <div class="text-muted mb-2">{{ purchase.created_at.strftime('%Y-%m-%d %I:%M %p') }}</div>
             {% if purchase.invoice_number %}
-              <div class="text-muted mb-2">Invoice #{{ purchase.invoice_number }}</div>
+            <div class="text-muted mb-2">Invoice #{{ purchase.invoice_number }}</div>
+            {% endif %}
+            {% if purchase.cam_number %}
+            <div class="text-muted mb-2"><strong>CAM #:</strong> {{ purchase.cam_number }}</div>
+            {% endif %}
+            {% if purchase.checked_by %}
+            <div class="text-muted mb-2"><strong>Checked By:</strong> {{ purchase.checked_by }}</div>
             {% endif %}
             <div>
-              <span class="badge {% if purchase.status == 'received' %}bg-success{% else %}bg-warning{% endif %} text-uppercase px-3 py-2 rounded-pill">
+              <span
+                class="badge {% if purchase.status == 'received' %}bg-success{% else %}bg-warning{% endif %} text-uppercase px-3 py-2 rounded-pill">
                 {{ purchase.status }}
               </span>
             </div>
@@ -59,6 +66,8 @@
             <thead class="border-bottom border-top bg-light text-uppercase small tracking-wider text-muted">
               <tr>
                 <th class="py-3 ps-3">Item</th>
+                <th class="py-3">Brand</th>
+                <th class="py-3">Vehicle</th>
                 <th class="py-3 text-center">Qty</th>
                 <th class="py-3 text-end">Unit Cost</th>
                 <th class="py-3 text-end pe-3">Line Total</th>
@@ -68,6 +77,8 @@
               {% for item in purchase.items %}
               <tr class="border-bottom">
                 <td class="py-3 ps-3 fw-bold">{{ item.product.name }}</td>
+                <td class="py-3">{{ item.product.brand or '—' }}</td>
+                <td class="py-3 small">{{ item.product.target_vehicle or '—' }}</td>
                 <td class="py-3 text-center">{{ item.quantity }}</td>
                 <td class="py-3 text-end text-muted">Rs. {{ "%.2f"|format(item.unit_cost) }}</td>
                 <td class="py-3 text-end pe-3 fw-bold">
@@ -106,12 +117,14 @@
 
         <div class="text-center border-top pt-5">
           <div class="row">
-              <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold" style="width: 40%; margin-left: 5%;">
-                Prepared By: {{ purchase.creator.username }}
-              </div>
-              <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold" style="width: 40%; margin-left: 10%;">
-                Authorized Signature
-              </div>
+            <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold"
+              style="width: 40%; margin-left: 5%;">
+              Prepared By: {{ purchase.creator.username }}
+            </div>
+            <div class="col-6 mt-5 pt-3 border-top border-dark text-muted small text-uppercase fw-bold"
+              style="width: 40%; margin-left: 10%;">
+              Authorized Signature
+            </div>
           </div>
         </div>
 
@@ -125,9 +138,12 @@
     body * {
       visibility: hidden;
     }
-    #receipt, #receipt * {
+
+    #receipt,
+    #receipt * {
       visibility: visible;
     }
+
     #receipt {
       position: absolute;
       left: 0;

@@ -10,19 +10,32 @@ sales_bp = Blueprint('sales', __name__)
 @login_required
 def create_order():
     all_products = Product.query.filter_by(is_active=True).all()
-    # Ideally should only show active customers or handle async search
     all_customers = Customer.query.order_by(Customer.name.asc()).all()
+    customers_data = {c.id: {'name': c.name, 'phone': c.phone or '', 'address': c.address or '', 'email': c.email or ''} for c in all_customers}
     
     if request.method == 'POST':
-        success, message = SalesController.create_order(request.form, current_user.id)
-        if success:
-             flash(message, "success")
-             return redirect(url_for('main.dashboard'))
+        is_admin = current_user.role == 'admin'
+        result = SalesController.create_order(request.form, current_user.id, is_admin=is_admin)
+        
+        # Admin direct-confirm returns 3-tuple: (success, message, order_id)
+        if is_admin and len(result) == 3:
+            success, message, order_id = result
+            if success:
+                flash(message, "success")
+                return redirect(url_for('sales.receipt', order_id=order_id))
+            else:
+                flash(message, "danger")
+                return redirect(url_for('sales.create_order'))
         else:
-             flash(message, "danger" if "Insufficient" in message else "warning")
-             return redirect(url_for('sales.create_order'))
+            success, message = result[0], result[1]
+            if success:
+                flash(message, "success")
+                return redirect(url_for('main.dashboard'))
+            else:
+                flash(message, "danger" if "Insufficient" in message else "warning")
+                return redirect(url_for('sales.create_order'))
     
-    return render_template('create_order.html', products=all_products, customers=all_customers)
+    return render_template('create_order.html', products=all_products, customers=all_customers, customers_data=customers_data)
 
 @sales_bp.route('/orders/<int:order_id>', methods=['GET', 'POST'])
 @login_required
@@ -79,5 +92,28 @@ def receipt(order_id):
 @login_required
 @role_required('admin')
 def sales_history():
-    orders = SalesController.get_all_orders()
-    return render_template('sales_history.html', orders=orders)
+    order_type = request.args.get('type', 'all')
+    status = request.args.get('status')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    data = SalesController.get_all_orders(order_type, start_date, end_date, status)
+    return render_template('sales_history.html', **data,
+                           order_type=order_type,
+                           start_date=start_date or '',
+                           end_date=end_date or '')
+
+@sales_bp.route('/orders/<int:order_id>/cancel', methods=['POST'])
+@login_required
+@role_required('admin')
+def cancel_order(order_id):
+    success, message = SalesController.cancel_order(order_id, current_user.id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('sales.order_detail', order_id=order_id))
+
+@sales_bp.route('/orders/<int:order_id>/remove_item/<int:item_id>', methods=['POST'])
+@login_required
+@role_required('admin')
+def remove_item(order_id, item_id):
+    success, message = SalesController.remove_order_item(order_id, item_id, current_user.id)
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('sales.order_detail', order_id=order_id))

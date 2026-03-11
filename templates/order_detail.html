@@ -1,169 +1,302 @@
 {% extends "base.html" %} {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-  <h3>Order #{{ order.id }}</h3>
-  <div>
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
-      <i class="bi bi-arrow-left"></i> Back
+  <h3 class="fw-bold mb-0">Order #{{ order.id }}</h3>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back
     </a>
-    {% if order.status == 'approved' %}
-    <a
-      href="{{ url_for('sales.receipt', order_id=order.id) }}"
-      class="btn btn-success"
-    >
-      <i class="bi bi-receipt"></i> Receipt
+    <a href="{{ url_for('sales.receipt', order_id=order.id) }}" class="btn btn-success rounded-pill px-4 shadow-sm">
+      <i class="bi bi-receipt me-1"></i> View Receipt
+    </a>
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('returns.process_customer', order_id=order.id) }}"
+      class="btn btn-warning rounded-pill px-4 shadow-sm">
+      <i class="bi bi-arrow-return-left me-1"></i> Return Items
     </a>
     {% endif %}
   </div>
 </div>
 
-<div class="row">
-  <div class="col-md-8">
+<div class="row g-4">
+  <!-- Main Content -->
+  <div class="col-lg-8">
     <form method="POST">
-      <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">Order Items</h5>
+      <!-- Section 1: Order Information -->
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+          <h5 class="fw-bold text-primary mb-0"><i class="bi bi-info-circle me-2"></i>Order Information</h5>
         </div>
-        <div class="card-body">
-          <table class="table table-bordered">
-            <thead class="table-dark">
-              <tr>
-                <th>Product</th>
-                <th>Quantity</th>
-                {% if current_user.role == 'admin' and order.status == 'draft'
-                %}
-                <th>Price (Rs.)</th>
-                {% elif order.status == 'approved' %}
-                <th>Price (Rs.)</th>
-                <th>Total (Rs.)</th>
-                {% endif %}
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in order.items %}
-              <tr>
-                <td>{{ item.product.name }}</td>
-                <td>{{ item.quantity }}</td>
-                {% if current_user.role == 'admin' and order.status == 'draft'
-                %}
-                <td>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="price_{{ item.id }}"
-                    class="form-control"
-                    value="{{ item.price or '' }}"
-                    required
-                  />
-                </td>
-                {% elif order.status == 'approved' %}
-                <td>Rs. {{ "%.2f"|format(item.price) }}</td>
-                <td>Rs. {{ "%.2f"|format(item.price * item.quantity) }}</td>
-                {% endif %}
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+        <div class="card-body px-4 pb-4">
+          <div class="row g-3">
+            <div class="col-sm-3">
+              <div class="bg-light rounded-3 p-3">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Order ID</div>
+                <div class="fs-5 fw-bold">#{{ order.id }}</div>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="bg-light rounded-3 p-3">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Date</div>
+                <div class="fw-bold">{{ order.created_at.strftime('%Y-%m-%d') }}</div>
+                <small class="text-muted">{{ order.created_at.strftime('%I:%M %p') }}</small>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="bg-light rounded-3 p-3">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Status</div>
+                <span
+                  class="badge {% if order.status == 'approved' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill px-3 py-2">
+                  {{ order.status|capitalize }}
+                </span>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="bg-light rounded-3 p-3">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Type</div>
+                <span
+                  class="badge {% if order.order_type == 'credit_sale' %}bg-info{% else %}bg-success{% endif %} rounded-pill px-3 py-2">
+                  {{ 'Credit Sale' if order.order_type == 'credit_sale' else 'Cash Sale' }}
+                </span>
+              </div>
+            </div>
+          </div>
 
-        {% if current_user.role == 'admin' and order.status == 'draft' %}
-        <div class="card-footer">
-          <button class="btn btn-primary">
-            <i class="bi bi-check-circle"></i> Approve Order
-          </button>
+          <!-- Customer Info -->
+          <div class="mt-3 p-3 bg-light rounded-3">
+            <div class="row">
+              <div class="col-sm-4">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Customer</div>
+                <div class="fw-bold">{{ order.customer_name or 'Walk-in' }}</div>
+              </div>
+              <div class="col-sm-4">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Phone</div>
+                <div>{{ order.customer_phone or 'N/A' }}</div>
+              </div>
+              <div class="col-sm-4">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Address</div>
+                <div>{{ order.customer_address or 'N/A' }}</div>
+              </div>
+            </div>
+            {% if order.customer_email %}
+            <div class="mt-2">
+              <div class="text-muted small text-uppercase fw-bold mb-1">Email</div>
+              <div>{{ order.customer_email }}</div>
+            </div>
+            {% endif %}
+          </div>
         </div>
-        {% endif %}
       </div>
+
+      <!-- Section 2: Product Table -->
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+          <h5 class="fw-bold text-primary mb-0"><i class="bi bi-box me-2"></i>Products</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th class="ps-4">Product</th>
+                  <th>Brand</th>
+                  <th>Target Vehicle</th>
+                  <th class="text-center">Qty</th>
+                  {% if current_user.role == 'admin' and order.status == 'draft' %}
+                  <th class="text-end">Unit Price (Rs.)</th>
+                  <th class="text-center">Action</th>
+                  {% elif order.status == 'approved' %}
+                  <th class="text-end">Unit Price</th>
+                  <th class="text-end pe-4">Total</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in order.items %}
+                <tr>
+                  <td class="ps-4">
+                    <div class="fw-bold">{{ item.product.name }}</div>
+                    <small class="text-muted">{{ item.product.sku or '' }}</small>
+                  </td>
+                  <td>{{ item.product.brand or '—' }}</td>
+                  <td class="small">{{ item.product.target_vehicle or '—' }}</td>
+                  <td class="text-center fw-bold">{{ item.quantity }}</td>
+                  {% if current_user.role == 'admin' and order.status == 'draft' %}
+                  <td class="text-end" style="width: 180px;">
+                    <input type="number" step="0.01" name="price_{{ item.id }}"
+                      class="form-control form-control-sm text-end mb-1"
+                      value="{{ item.price or item.product.selling_price or '' }}" required />
+                    <small class="text-muted d-block text-end" style="font-size: 0.75rem;">DB Price: Rs. {{
+                      "%.2f"|format(item.product.selling_price) if item.product.selling_price else 'N/A' }}</small>
+                  </td>
+                  <td class="text-center align-middle">
+                    <button type="button" class="btn btn-sm btn-outline-danger" title="Remove Item"
+                      onclick="if(confirm('Are you sure you want to remove this item?')) { document.getElementById('remove-form-{{ item.id }}').submit(); }">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                  {% elif order.status == 'approved' %}
+                  <td class="text-end">Rs. {{ "%.2f"|format(item.price) }}</td>
+                  <td class="text-end pe-4 fw-bold">Rs. {{ "%.2f"|format(item.price * item.quantity) }}</td>
+                  {% endif %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Payment & Approval (draft only) -->
+      {% if current_user.role == 'admin' and order.status == 'draft' %}
+      <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
+          <h5 class="fw-bold text-primary mb-0"><i class="bi bi-credit-card me-2"></i>Payment Information</h5>
+        </div>
+        <div class="card-body px-4 pb-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold small text-uppercase">Payment Method</label>
+              <select name="payment_method" class="form-select">
+                <option value="cash">Cash</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="credit_card">Credit Card</option>
+              </select>
+            </div>
+
+            {% if order.order_type == 'sale' %}
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="fullyPaidCheck" checked>
+                <label class="form-check-label fw-bold" for="fullyPaidCheck">Fully Paid</label>
+              </div>
+            </div>
+            <div class="col-md-4" id="cashAmountField" style="display: none;">
+              <label class="form-label fw-bold small text-uppercase">Amount Received (Rs.)</label>
+              <input type="number" name="amount_paid" id="amountPaidInput" class="form-control" step="0.01" min="0"
+                value="0" />
+            </div>
+            {% else %}
+            <div class="col-md-4">
+              <label class="form-label fw-bold small text-uppercase">Advance Payment (Rs.)</label>
+              <input type="number" name="amount_paid" id="amountPaidInput" class="form-control" step="0.01" min="0"
+                value="0" />
+              <small class="text-muted">Leave 0 for no advance</small>
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="row g-3 mt-1">
+            <div class="col-md-4">
+              <label class="form-label fw-bold small text-uppercase">CAM Number</label>
+              <input type="text" name="cam_number" class="form-control" placeholder="Optional" />
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold small text-uppercase">Checked By</label>
+              <input type="text" name="checked_by" class="form-control" placeholder="Person checking" />
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-flex gap-3 mt-4 pt-3 border-top">
+            <button type="submit" class="btn btn-success rounded-pill px-5 py-2 fw-bold shadow-sm">
+              <i class="bi bi-check-circle me-2"></i> Approve Order
+            </button>
+            <button type="button" class="btn btn-outline-danger rounded-pill px-4 py-2"
+              onclick="if(confirm('Are you sure you want to cancel this order?')) { document.getElementById('cancel-order-form').submit(); }">
+              <i class="bi bi-x-circle me-1"></i> Cancel Order
+            </button>
+          </div>
+        </div>
+      </div>
+      {% endif %}
     </form>
+
+    <!-- Hidden forms for modifications without nesting forms -->
+    {% if current_user.role == 'admin' and order.status == 'draft' %}
+    <form id="cancel-order-form" method="POST" action="{{ url_for('sales.cancel_order', order_id=order.id) }}"
+      style="display: none;"></form>
+    {% for item in order.items %}
+    <form id="remove-form-{{ item.id }}" method="POST"
+      action="{{ url_for('sales.remove_item', order_id=order.id, item_id=item.id) }}" style="display: none;"></form>
+    {% endfor %}
+    {% endif %}
   </div>
 
-  <div class="col-md-4">
-    <div class="card mb-4">
-      <div class="card-header bg-info text-white">
-        <h5 class="mb-0">Order Summary</h5>
+  <!-- Sidebar: Order Summary -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+      <div class="card-header bg-primary text-white rounded-top-4 py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-receipt me-2"></i>Order Summary</h5>
       </div>
-      <div class="card-body">
-        <p>
-          <strong>Status:</strong>
-          <span
-            class="badge {% if order.status == 'approved' %}bg-success{% else %}bg-warning{% endif %}"
-          >
-            {{ order.status }}
-          </span>
-        </p>
-
-        {% if order.order_type == 'credit_sale' %}
-        <p>
-          <strong>Order Type:</strong>
-          <span class="badge bg-info">Credit Sale</span>
-        </p>
-        <p><strong>Customer:</strong> {{ order.customer_name or 'N/A' }}</p>
-        <p><strong>Phone:</strong> {{ order.customer_phone or 'N/A' }}</p>
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted">Total Amount</span>
+          <span class="fw-bold fs-5">Rs. {{ "%.2f"|format(order.total_amount) }}</span>
+        </div>
+        {% if order.status == 'approved' %}
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted">Amount Paid</span>
+          <span class="text-success fw-bold">Rs. {{ "%.2f"|format(order.amount_paid) }}</span>
+        </div>
+        {% if order.remaining_amount > 0 %}
+        <div class="d-flex justify-content-between mb-3 border-top pt-3">
+          <span class="text-danger fw-bold">Remaining</span>
+          <span class="text-danger fw-bold fs-5">Rs. {{ "%.2f"|format(order.remaining_amount) }}</span>
+        </div>
+        {% endif %}
+        {% if order.due_date %}
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted">Due Date</span>
+          <span class="fw-bold">{{ order.due_date.strftime('%Y-%m-%d') }}</span>
+        </div>
+        {% endif %}
         {% endif %}
 
-        <p>
-          <strong>Total Amount:</strong> Rs. {{
-          "%.2f"|format(order.total_amount) }}
-        </p>
-
-        {% if order.order_type == 'credit_sale' %}
-        <p>
-          <strong>Amount Paid:</strong>
-          <span class="text-success"
-            >Rs. {{ "%.2f"|format(order.amount_paid) }}</span
-          >
-        </p>
-        <p>
-          <strong>Remaining:</strong>
-          <span class="text-danger"
-            >Rs. {{ "%.2f"|format(order.remaining_amount) }}</span
-          >
-        </p>
-        {% if order.due_date %}
-        <p>
-          <strong>Due Date:</strong> {{ order.due_date.strftime('%Y-%m-%d') }}
-        </p>
-        {% endif %} {% endif %}
-
-        <p><strong>Created By:</strong> {{ order.creator.username }}</p>
-        <p>
-          <strong>Created At:</strong> {{ order.created_at.strftime('%Y-%m-%d
-          %H:%M') }}
-        </p>
-
+        <hr>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Created By</span>
+          <span class="fw-bold">{{ order.creator.username }}</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Created At</span>
+          <span class="fw-bold">{{ order.created_at.strftime('%Y-%m-%d %I:%M %p') }}</span>
+        </div>
         {% if order.approver %}
-        <p><strong>Approved By:</strong> {{ order.approver.username }}</p>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Approved By</span>
+          <span class="fw-bold">{{ order.approver.username }}</span>
+        </div>
+        {% endif %}
+        {% if order.cam_number %}
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">CAM Number</span>
+          <span class="fw-bold">{{ order.cam_number }}</span>
+        </div>
+        {% endif %}
+        {% if order.checked_by %}
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted small">Checked By</span>
+          <span class="fw-bold">{{ order.checked_by }}</span>
+        </div>
         {% endif %}
       </div>
     </div>
 
-    {% if order.order_type == 'credit_sale' and order.status == 'approved' and
-    order.remaining_amount > 0 %}
-    <div class="card">
-      <div class="card-header bg-success text-white">
-        <h5 class="mb-0">Record Payment</h5>
+    <!-- Record Payment (approved credit sales only) -->
+    {% if order.order_type == 'credit_sale' and order.status == 'approved' and order.remaining_amount > 0 %}
+    <div class="card border-0 shadow-sm rounded-4">
+      <div class="card-header bg-success text-white rounded-top-4 py-3">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-cash me-2"></i>Record Payment</h5>
       </div>
-      <div class="card-body">
-        <form
-          method="POST"
-          action="{{ url_for('sales.add_order_payment', order_id=order.id) }}"
-        >
+      <div class="card-body p-4">
+        <form method="POST" action="{{ url_for('sales.add_order_payment', order_id=order.id) }}">
           <div class="mb-3">
-            <label class="form-label"
-              >Amount (Max: Rs. {{ "%.2f"|format(order.remaining_amount)
-              }})</label
-            >
-            <input
-              type="number"
-              name="amount"
-              class="form-control"
-              step="0.01"
-              max="{{ order.remaining_amount }}"
-              min="0.01"
-              required
-            />
+            <label class="form-label fw-bold">Amount (Max: Rs. {{ "%.2f"|format(order.remaining_amount) }})</label>
+            <input type="number" name="amount" class="form-control" step="0.01" max="{{ order.remaining_amount }}"
+              min="0.01" required />
           </div>
           <div class="mb-3">
-            <label class="form-label">Payment Method</label>
+            <label class="form-label fw-bold">Payment Method</label>
             <select name="payment_method" class="form-select" required>
               <option value="cash">Cash</option>
               <option value="bank_transfer">Bank Transfer</option>
@@ -171,11 +304,11 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Notes</label>
+            <label class="form-label fw-bold">Notes</label>
             <textarea name="notes" class="form-control" rows="2"></textarea>
           </div>
-          <button type="submit" class="btn btn-success w-100">
-            <i class="bi bi-cash"></i> Record Payment
+          <button type="submit" class="btn btn-success w-100 py-2 rounded-pill fw-bold">
+            <i class="bi bi-check-circle me-1"></i> Record Payment
           </button>
         </form>
       </div>
@@ -183,4 +316,48 @@
     {% endif %}
   </div>
 </div>
+
+{% if current_user.role == 'admin' and order.status == 'draft' %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const priceInputs = document.querySelectorAll('input[name^="price_"]');
+    const fullyPaidCheck = document.getElementById('fullyPaidCheck');
+    const cashAmountField = document.getElementById('cashAmountField');
+    const amountPaidInput = document.getElementById('amountPaidInput');
+
+    function calculateTotal() {
+      let total = 0;
+      document.querySelectorAll('input[name^="price_"]').forEach(function (input) {
+        const price = parseFloat(input.value) || 0;
+        const row = input.closest('tr');
+        const qty = parseInt(row.cells[3].textContent) || 0;
+        total += price * qty;
+      });
+      return total;
+    }
+
+    function syncPayment() {
+      {% if order.order_type == 'sale' %}
+      if (fullyPaidCheck && fullyPaidCheck.checked) {
+        const total = calculateTotal();
+        amountPaidInput.value = total.toFixed(2);
+        cashAmountField.style.display = 'none';
+      } else {
+        cashAmountField.style.display = 'block';
+      }
+      {% endif %}
+    }
+
+    priceInputs.forEach(function (input) {
+      input.addEventListener('input', syncPayment);
+    });
+
+    if (fullyPaidCheck) {
+      fullyPaidCheck.addEventListener('change', syncPayment);
+    }
+
+    syncPayment();
+  });
+</script>
+{% endif %}
 {% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">{{ employee.full_name }}</h2>
+        <p class="text-muted mb-0"><i class="bi bi-person-badge me-1"></i>{{ employee.role or 'Staff' }} — {{
+            employee.nickname }}</p>
+    </div>
+    <a href="{{ url_for('staff.staff_list') }}" class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Staff
+    </a>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Profile Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-circle me-2"></i>Profile</h5>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Full Name</div>
+                    <div class="fw-bold">{{ employee.full_name }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Phone</div>
+                    <div>{{ employee.phone or 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Address</div>
+                    <div>{{ employee.address or 'N/A' }}</div>
+                </div>
+                <div class="mb-3">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Joined</div>
+                    <div>{{ employee.created_at.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <div class="text-muted small text-uppercase fw-bold mb-1">Total Paid</div>
+                    <div class="fs-3 fw-bold text-success">Rs. {{ "%.2f"|format(employee.total_paid) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Record Payment -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-cash me-2"></i>Record Payment</h5>
+                <form method="POST" action="{{ url_for('staff.record_payment', employee_id=employee.id) }}">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Type</label>
+                            <select name="payment_type" class="form-select" required>
+                                <option value="salary">Salary</option>
+                                <option value="bonus">Bonus</option>
+                                <option value="advance">Advance</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Amount (Rs.)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Notes</label>
+                            <input type="text" name="notes" class="form-control" placeholder="e.g. March salary" />
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100 rounded-pill">
+                                <i class="bi bi-check"></i> Pay
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Payment History -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-clock-history me-2"></i>Payment History</h5>
+
+                <!-- Filters -->
+                <form method="GET" class="row g-2 mb-3">
+                    <div class="col-md-3">
+                        <select name="payment_type" class="form-select form-select-sm">
+                            <option value="">All Types</option>
+                            <option value="salary" {% if payment_type=='salary' %}selected{% endif %}>Salary</option>
+                            <option value="bonus" {% if payment_type=='bonus' %}selected{% endif %}>Bonus</option>
+                            <option value="advance" {% if payment_type=='advance' %}selected{% endif %}>Advance</option>
+                            <option value="other" {% if payment_type=='other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" name="start_date" class="form-control form-control-sm"
+                            value="{{ start_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <input type="date" name="end_date" class="form-control form-control-sm"
+                            value="{{ end_date or '' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary btn-sm">Filter</button>
+                        <a href="{{ url_for('staff.staff_detail', employee_id=employee.id) }}"
+                            class="btn btn-secondary btn-sm">Clear</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Notes</th>
+                                <th>Recorded By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in payments %}
+                            <tr>
+                                <td>{{ p.date.strftime('%Y-%m-%d %I:%M %p') }}</td>
+                                <td>
+                                    {% if p.payment_type == 'salary' %}
+                                    <span class="badge bg-primary rounded-pill">Salary</span>
+                                    {% elif p.payment_type == 'bonus' %}
+                                    <span class="badge bg-success rounded-pill">Bonus</span>
+                                    {% elif p.payment_type == 'advance' %}
+                                    <span class="badge bg-warning text-dark rounded-pill">Advance</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary rounded-pill">Other</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-success">Rs. {{ "%.2f"|format(p.amount) }}</td>
+                                <td class="text-muted">{{ p.notes or '—' }}</td>
+                                <td>{{ p.creator.username }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No payment records found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -5,12 +5,14 @@
 {% block content %}
 <div class="row mb-5">
   <div class="col-md-6 mb-3">
-    <a href="{{ url_for('sales.create_order') }}" class="btn btn-primary w-100 py-4 rounded-4 shadow-sm fs-4 d-flex align-items-center justify-content-center">
+    <a href="{{ url_for('sales.create_order') }}"
+      class="btn btn-primary w-100 py-4 rounded-4 shadow-sm fs-4 d-flex align-items-center justify-content-center">
       <i class="bi bi-plus-circle me-3 fs-3"></i> Create New Sale
     </a>
   </div>
   <div class="col-md-6 mb-3">
-    <a href="{{ url_for('products.products') }}" class="btn btn-info w-100 py-4 rounded-4 shadow-sm fs-4 text-white d-flex align-items-center justify-content-center">
+    <a href="{{ url_for('products.products') }}"
+      class="btn btn-info w-100 py-4 rounded-4 shadow-sm fs-4 text-white d-flex align-items-center justify-content-center">
       <i class="bi bi-box me-3 fs-3"></i> View Product Catalog
     </a>
   </div>
@@ -19,7 +21,7 @@
 <div class="card border-0 shadow-sm rounded-4">
   <div class="card-body p-4">
     <h5 class="fw-bold mb-4">My Recent Activity</h5>
-    
+
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead class="text-muted small text-uppercase bg-light">
@@ -27,7 +29,8 @@
             <th class="rounded-start border-0">Order ID</th>
             <th class="border-0">Type</th>
             <th class="border-0">Status</th>
-            <th class="border-0 rounded-end">Date / Time</th>
+            <th class="border-0">Date / Time</th>
+            <th class="border-0 rounded-end">Action</th>
           </tr>
         </thead>
         <tbody class="border-top-0">
@@ -38,20 +41,26 @@
               {% if order.order_type == 'credit_sale' %}
               <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-2">Credit</span>
               {% else %}
-              <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Cash</span>
+              <span
+                class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Cash</span>
               {% endif %}
             </td>
             <td>
-              <span class="badge {% if order.status == 'approved' %}bg-success{% else %}bg-warning text-dark{% endif %} rounded-pill px-2">
+              <span
+                class="badge {% if order.status == 'approved' %}bg-success{% elif order.status == 'cancelled' %}bg-danger{% else %}bg-warning text-dark{% endif %} rounded-pill px-2">
                 {{ order.status|title }}
               </span>
             </td>
             <td class="text-muted small">{{ order.created_at.strftime('%Y-%m-%d %I:%M %p') }}</td>
+            <td>
+              <a href="{{ url_for('sales.order_detail', order_id=order.id) }}"
+                class="btn btn-sm btn-light rounded-pill px-3 fw-bold">View</a>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-      
+
       {% if not orders %}
       <div class="text-center py-5 text-muted">
         <i class="bi bi-clock-history display-4 mb-3 opacity-50"></i>

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block page_title %}Settlement Receipt{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 d-print-none">
+    <h3 class="fw-bold mb-0">Receipt Details</h3>
+    <div>
+        <button onclick="window.print()" class="btn btn-primary rounded-pill px-4 shadow-sm me-2">
+            <i class="bi bi-printer me-1"></i> Print Receipt
+        </button>
+        <a href="{{ url_for('customers.detail', customer_id=txn.customer_id) }}"
+            class="btn btn-outline-secondary rounded-pill px-4 shadow-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Customer
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-lg rounded-4 print-container bg-white"
+            style="border-top: 5px solid #10b981 !important;">
+            <div class="card-body p-5">
+                <!-- Header -->
+                <div class="row mb-5 border-bottom pb-4">
+                    <div class="col-sm-6">
+                        <h2 class="fw-bold text-dark mb-0"><i class="bi bi-car-front-fill text-primary"></i> Suzuki Auto
+                        </h2>
+                        <p class="text-muted small mt-1">Next-Generation Spare Parts POS</p>
+                    </div>
+                    <div class="col-sm-6 text-sm-end text-start mt-3 mt-sm-0">
+                        <h4 class="text-success fw-bold text-uppercase tracking-wider mb-2">Settlement Receipt</h4>
+                        <p class="text-muted mb-0">Receipt #: <strong>{{ txn.id }}</strong></p>
+                        <p class="text-muted mb-0">Date: <strong>{{ txn.created_at.strftime('%Y-%m-%d %H:%M')
+                                }}</strong></p>
+                    </div>
+                </div>
+
+                <!-- Info Section -->
+                <div class="row mb-5">
+                    <div class="col-sm-5">
+                        <p class="text-muted small text-uppercase fw-bold mb-2 tracking-wider">Received From Customer:
+                        </p>
+                        <h5 class="fw-bold mb-1">{{ txn.customer.name }}</h5>
+                        <div class="text-muted small">
+                            <i class="bi bi-telephone text-primary me-1"></i> {{ txn.customer.phone or 'N/A' }}
+                        </div>
+                    </div>
+
+                    <div class="col-sm-2 text-center d-flex align-items-center justify-content-center">
+                        <i class="bi bi-arrow-right-circle text-success" style="font-size: 2rem;"></i>
+                    </div>
+
+                    <div class="col-sm-5 text-sm-end text-start">
+                        <p class="text-muted small text-uppercase fw-bold mb-2 tracking-wider">Paid Directly To
+                            Supplier:</p>
+                        <h5 class="fw-bold mb-1 text-danger">{{ supplier_name }}</h5>
+                        <span class="badge bg-danger bg-opacity-10 text-danger rounded-pill px-3 py-1">Third-Party
+                            Settlement</span>
+                    </div>
+                </div>
+
+                <!-- Payment Block -->
+                <div class="table-responsive mb-5">
+                    <table class="table border-top border-bottom">
+                        <tbody>
+                            <tr>
+                                <td class="py-4">
+                                    <h6 class="fw-bold mb-1">Payment Method</h6>
+                                    <span class="text-muted text-capitalize">{{ txn.payment_method }}</span>
+                                </td>
+                                <td class="py-4">
+                                    <h6 class="fw-bold mb-1">Reference Notes</h6>
+                                    <span class="text-muted">{{ txn.notes or 'No additional notes provided.' }}</span>
+                                </td>
+                                <td class="py-4 text-end">
+                                    <h6 class="fw-bold mb-1 text-muted text-uppercase small">Total Settled Amount</h6>
+                                    <h3 class="fw-bold text-success mb-0">Rs. {{ "%.2f"|format(txn.amount) }}</h3>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Footer -->
+                <div class="text-center mt-5 pt-3">
+                    <p class="text-muted small fst-italic">This transaction has been successfully recorded in both the
+                        Customer's and Supplier's ledgers securely.</p>
+                    <p class="fw-bold small text-dark mt-2">Processed By: {{ txn.creator.full_name or
+                        txn.creator.username }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        body {
+            background-color: #fff;
+        }
+
+        .sidebar,
+        .topbar,
+        .d-print-none {
+            display: none !important;
+        }
+
+        .main-content {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+        }
+
+        .card {
+            box-shadow: none !important;
+            border: none !important;
+        }
+
+        .print-container {
+            padding: 0 !important;
+            border-top: 5px solid #10b981 !important;
+        }
+    }
+</style>
+{% endblock %}

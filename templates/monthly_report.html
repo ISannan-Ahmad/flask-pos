@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block page_title %}Monthly Report{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+    <h3 class="fw-bold mb-0"><i class="bi bi-file-earmark-bar-graph me-2"></i>Monthly Report</h3>
+
+    <form method="GET" class="d-flex gap-2 align-items-center">
+        <select name="year" class="form-select form-select-sm" style="width:100px">
+            {% for y in years %}
+            <option value="{{ y }}" {% if y==selected_year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+        </select>
+        <select name="month" class="form-select form-select-sm" style="width:110px">
+            {% for m in months %}
+            <option value="{{ m }}" {% if m==selected_month %}selected{% endif %}>{{ month_names[m-1] }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3">View Report</button>
+    </form>
+</div>
+
+<!-- Report Header -->
+<div class="card border-0 shadow-sm rounded-4 mb-4"
+    style="background: linear-gradient(135deg, #1F4E79 0%, #2C7A7B 100%);">
+    <div class="card-body p-4 text-white text-center">
+        <h2 class="fw-bold mb-1">{{ report.month_name }} {{ report.year }}</h2>
+        <p class="mb-0 text-white-50">Financial Summary Report</p>
+    </div>
+</div>
+
+<!-- Financial Summary -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-bank me-2 text-primary"></i>Financial Summary</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted fw-bold">Revenue</td>
+                            <td class="text-end fw-bold fs-5">Rs. {{ "%.2f"|format(report.total_revenue) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Purchases</td>
+                            <td class="text-end fw-bold fs-5">Rs. {{ "%.2f"|format(report.total_purchases) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Expenses</td>
+                            <td class="text-end fw-bold fs-5 text-warning">Rs. {{ "%.2f"|format(report.total_expenses)
+                                }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted fw-bold">Staff Expenses</td>
+                            <td class="text-end fw-bold fs-5 text-secondary">Rs. {{
+                                "%.2f"|format(report.total_staff_expenses) }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6 d-flex align-items-center justify-content-center">
+                <div
+                    class="text-center p-4 rounded-4 {% if report.net_profit >= 0 %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 w-100">
+                    <small class="text-muted fw-bold text-uppercase">Net Profit</small>
+                    <h2
+                        class="fw-bold mb-0 {% if report.net_profit >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        Rs. {{ "%.2f"|format(report.net_profit) }}
+                    </h2>
+                    <small class="text-muted">Revenue − Expenses − Staff Expenses</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales Metrics -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-cart-check me-2 text-primary"></i>Sales Metrics</h5>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="p-3 rounded-4 bg-light text-center">
+                    <small class="text-muted fw-bold text-uppercase">Total Sales</small>
+                    <h3 class="fw-bold mb-0">Rs. {{ "%.2f"|format(report.total_sales) }}</h3>
+                    <small class="text-muted">{{ report.total_orders }} orders</small>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="p-3 rounded-4 bg-light text-center">
+                    <small class="text-muted fw-bold text-uppercase">Cash Sales</small>
+                    <h3 class="fw-bold mb-0 text-success">Rs. {{ "%.2f"|format(report.cash_sales) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="p-3 rounded-4 bg-light text-center">
+                    <small class="text-muted fw-bold text-uppercase">Credit Sales</small>
+                    <h3 class="fw-bold mb-0 text-info">Rs. {{ "%.2f"|format(report.credit_sales) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-4 bg-light text-center">
+                    <small class="text-muted fw-bold text-uppercase">Receipts Collected</small>
+                    <h3 class="fw-bold mb-0">Rs. {{ "%.2f"|format(report.receipts_collected) }}</h3>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="p-3 rounded-4 bg-light text-center">
+                    <small class="text-muted fw-bold text-uppercase">Outstanding Credit</small>
+                    <h3 class="fw-bold mb-0 text-danger">Rs. {{ "%.2f"|format(report.outstanding_credit) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Buttons -->
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <h5 class="fw-bold mb-3"><i class="bi bi-download me-2 text-primary"></i>Download Report</h5>
+        <div class="d-flex gap-3 flex-wrap">
+            <a href="{{ url_for('analytics.download_report', year=report.year, month=report.month, format='pdf') }}"
+                class="btn btn-danger rounded-pill px-4 py-2 shadow-sm">
+                <i class="bi bi-file-earmark-pdf me-2"></i>Download PDF
+            </a>
+            <a href="{{ url_for('analytics.download_report', year=report.year, month=report.month, format='excel') }}"
+                class="btn btn-success rounded-pill px-4 py-2 shadow-sm">
+                <i class="bi bi-file-earmark-excel me-2"></i>Download Excel
+            </a>
+            <a href="{{ url_for('analytics.download_report', year=report.year, month=report.month, format='csv') }}"
+                class="btn btn-secondary rounded-pill px-4 py-2 shadow-sm">
+                <i class="bi bi-filetype-csv me-2"></i>Download CSV
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
